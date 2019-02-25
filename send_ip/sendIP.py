@@ -33,8 +33,6 @@ def send_address(json_data, target, port):
     header = {'Content-Type': 'application/json'}
     r = requests.post(http, data=json_data, headers=header) 
 
-address = ""
-
 # An address was provided.
 if args.address:
     address = get_address(args.address)
@@ -47,4 +45,4 @@ if args.address:
 # Otherwise, use Google's DNS.
 else:
     address = get_address("8.8.8.8")
-
+    print(address)
