@@ -2,17 +2,26 @@ from state_machine import state_machine
 from gpiozero import OutputDevice, Button, InputDevice, LED
 
 # to fix by Tuesday:
+# 1. add debugging print statements
+# 2. enter pin numbers
+# 3. fix output call to app
+# 4. does POWER need changed? should this step just be removed?
+# 5. receive input from app
+# 6. create timers
+
+# fix next
 # 1. using info from the app to reprogram the cooker
-# 2. call to the next state: does anything besides the name need passed that isn't a global variable?
 
 # universal variables
 # user_selection_options = ["manual", "probe", "program"]
 # heat_selection_options = ["high", "low", "warm"]
-user_selection = ""
-heat_selection = ""
+previous_state = "-"
+user_selection = "-"
+heat_selection = "-"
 remote_control = "no"
 start_temp = 160 #degrees
 start_time = 4 #hours
+remote_input = "NULL"
 # read ports  inputs to the function
 ON_OFF = Button(pin) 
 POWER = InputDevice(pin)
@@ -35,14 +44,13 @@ ENTER_W = LED(pin)
 
 def idle_state:
 	next_state = "idle_state"
+	remote_control = "no"
 	while next_state = "idle_state":
 		#control the next state
 		if POWER.value == 1: #might have to treat this input as something other than a boolean (real value?)
 			next_state = "on_off_state"
 		else:
 			next_state = "idle_state"
-			
-		previous_state = "idle_state"
 		
 		#control the outputs of this state
 		# no outputs
@@ -60,7 +68,6 @@ def on_off_state:
 		else:
 			next_state = "on_off_state"
 			
-		previous_state = "on_off_state"	
 		#control the outputs of this state
 		# no outputs 
     
@@ -88,10 +95,9 @@ def sel_state:
 		else:
 			next_state = "sel_state"
 			
-		previous_state = "sel_state"
 		#control the outputs of this state
 		# takes probe, manual, program
-		if remote_control = "yes":
+		if remote_control = "yes" and remote_input != "NULL":
 			if PROBE_APP.is_pressed:
 				PROBE_W.on()
 				pause(0.25)
@@ -144,10 +150,9 @@ def cook_time_state:
 		else:
 			next_state = "cook_time_state"
 			
-		previous_state = "cook_time_state"
 		#control the outputs of this state
 		# takes up, down, enter, manual, probe, program
-		if remote_control = "yes": 
+		if remote_control = "yes" and remote_input != "NULL": 
 			if PROBE_APP.is_pressed:
 				PROBE_W.on()
 				pause(0.25)
@@ -216,8 +221,6 @@ def heat_setting_state:
 			next_state = "cook_time_state"
 		else
 			next_state = "heat_setting_state"
-			
-		previous_state = "heat_setting_state"
 		
 		#control the outputs of this state
 		# takes up, down, enter, manual, probe, program
@@ -244,7 +247,7 @@ def heat_setting_state:
 			else:
 				heat_selection = "high"
 				
-		if remote_control = "yes": 
+		if remote_control = "yes" and remote_input != "NULL": 
 			if PROBE_APP.is_pressed:
 				PROBE_W.on()
 				pause(0.25)
@@ -332,10 +335,9 @@ def temp_setting_state:
 		else
 			next_state = "temp_setting_state"
 			
-		previous_state = "temp_setting_state"
 		#control the outputs of this state
 		# takes up, down, enter, manual, program
-		if remote_control = "yes": 
+		if remote_control = "yes" and remote_input != "NULL": 
 			if PROBE_APP.is_pressed: ######################### TAKE NOTES HERE, NOT SURE IF THIS IS WHAT HAPPENS #############################
 				PROBE_W.on()
 				pause(0.25)
@@ -379,6 +381,7 @@ def display_state:
 	next_state = "display_state"
 	# cooker is locally programmed, remote control can start
 	remote_control = "yes"
+	remote_input = "NULL"
 	# start on/off timer
 	on_off_timer.start()
 	# send information to the app
@@ -412,10 +415,11 @@ def display_state:
 		else:
 			next_state = "display_state"
 			
-		previous_state = "display_state"
+		# ask for instructions
+			
 		#control the outputs of this state
 		# takes probe, manual, program
-		if remote_control = "yes":
+		if remote_control = "yes" and remote_input != "NULL":
 			# request info 
 			# if info is given, press the necessary button
 			if PROBE_APP.is_pressed:
