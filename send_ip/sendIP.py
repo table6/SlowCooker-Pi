@@ -28,7 +28,7 @@ def make_json(address):
     return json.dumps(d)
 
 def send_address(json_data, target, port):
-    http = "http://{}:{}/rpi-address".format(target, port)
+    http = "http://{}:{}/rpi_address".format(target, port)
 
     header = {'Content-Type': 'application/json'}
     r = requests.post(http, data=json_data, headers=header) 
