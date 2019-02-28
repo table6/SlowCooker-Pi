@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 from state_machine import state_machine
 from datetime import datetime
 from gpiozero import OutputDevice, Button, InputDevice, LED
+import time
 
 # to fix by Tuesday:
 # 1. way to know if user sent an input... (display state, whether to enter user info or not)
@@ -35,12 +38,13 @@ DOWN_R = Button(13)
 DOWN_W = LED(19)
 ENTER_R = Button(16)
 ENTER_W = LED(20)
+next_state = "idle_state"
 # input from app won't act like a button, but will be a string
 
 # return seems to control which state is next so probably don't need 
 # the clocked process to control
 
-def idle_state(next_state):
+def idle_state():
 	next_state = "idle_state"
 	remote_control = "no"
 	print("IDLE STATE")
@@ -56,9 +60,13 @@ def idle_state(next_state):
 
 	return (next_state)
 
-def on_off_state(next_state):
+def on_off_state():
 	next_state = "on_off_state"
 	print("ON OFF STATE")
+
+    # Sleep for a period of time to ignore slow cooker initialization.
+    time.sleep(1)
+
 	while next_state == "on_off_state":
 		#control the next state
 		if POWER.value == 0:
@@ -73,7 +81,7 @@ def on_off_state(next_state):
 
 	return (next_state)
 
-def sel_state(next_state):
+def sel_state():
 	next_state = "sel_state"
 	# start inactivity timer
 	# # inactivity_timer.start()
@@ -120,7 +128,7 @@ def sel_state(next_state):
 
 	return (next_state)
 
-def cook_time_state(next_state):
+def cook_time_state():
 	next_state = "cook_time_state"
 	# start inactivity timer
 	# # inactivity_timer.start()
@@ -197,7 +205,7 @@ def cook_time_state(next_state):
 
 	return (next_state)
 
-def heat_setting_state(next_state):
+def heat_setting_state():
 	next_state = "heat_setting_state"
 	# start inactivity timer
 	# # inactivity_timer.start()
@@ -286,7 +294,7 @@ def heat_setting_state(next_state):
 
 	return (next_state)
 	
-def temp_setting_state(next_state):
+def temp_setting_state():
 	next_state = "temp_setting_state"
 	# start the start timer
 	# # start_timer.start()
@@ -339,7 +347,7 @@ def temp_setting_state(next_state):
 
 	return (next_state)
 
-def display_state(next_state):
+def display_state():
 	next_state = "display_state"
 	# cooker is locally programmed, remote control can start
 	remote_control = "yes"
@@ -410,11 +418,11 @@ def display_state(next_state):
 
 	return (next_state)
 
-def power_time_met_state(next_state):
+def power_time_met_state():
 	return (next_state)
 
 if __name__== "__main__":
-    m = StateMachine()
+    m = state_machine()
     m.add_state("idle_state", idle_state)
     m.add_state("on_off_state", on_off_state)
     m.add_state("sel_state", sel_state)
@@ -423,6 +431,6 @@ if __name__== "__main__":
     m.add_state("temp_setting_state", temp_setting_state)
     m.add_state("display_state", display_state)
     m.add_state("power_time_met_state", None, end_state=1)
-    m.set_start("idle") #this is the start command
+    m.set_start("idle_state") #this is the start command
     print("STARTING RUN")
     m.run()
