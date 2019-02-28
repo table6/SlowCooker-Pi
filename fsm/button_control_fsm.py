@@ -6,10 +6,10 @@ from gpiozero import OutputDevice, Button, InputDevice, LED
 import time
 
 # to fix by Tuesday:
-# 1. way to know if user sent an input... (display state, whether to enter user info or not)
+# 1. way to know if user sent an input... instead of remote_input... (display state, whether to enter user info or not)
 # 2. 
 # 3. fix output call to app (just need to know how to send it, format is good)
-# 4. does POWER need changed? should this step just be removed? (current thought is take it out)
+# 4. 
 # 5. receive input from app (just need to know how to recieve it)
 # 6. create timers
 
@@ -24,41 +24,21 @@ start_temp = 160 #degrees F
 start_time = 7 #index
 remote_input = "NULL"
 # read ports  inputs to the function
-ON_OFF = Button(4) 
-POWER = InputDevice(17)
-PROGRAM_R = Button(27)
-PROGRAM_W = LED(22)
-MANUAL_R = Button(18)
-MANUAL_W = LED(23) 
-PROBE_R = Button(24)
-PROBE_W = LED(25) 
-UP_R = Button(5)
-UP_W = LED(6)
-DOWN_R = Button(13)
-DOWN_W = LED(19)
-ENTER_R = Button(16)
-ENTER_W = LED(20)
-next_state = "idle_state"
+ON_OFF = InputDevice(4) # pin 7
+PROGRAM_R = InputDevice(27) # pin 13
+PROGRAM_W = LED(22) # pin 15
+MANUAL_R = InputDevice(18) # pin 12
+MANUAL_W = LED(23) # pin 16
+PROBE_R = InputDevice(24) # pin 18
+PROBE_W = LED(25) # pin 22
+UP_R = InputDevice(5) # pin 29
+UP_W = LED(6) # pin 31
+DOWN_R = InputDevice(13) # pin 33
+DOWN_W = LED(19) # pin 35
+ENTER_R = InputDevice(16) # pin 36
+ENTER_W = LED(20) # pin 38
+next_state = "on_off_state"
 # input from app won't act like a button, but will be a string
-
-# return seems to control which state is next so probably don't need 
-# the clocked process to control
-
-def idle_state():
-	next_state = "idle_state"
-	remote_control = "no"
-	print("IDLE STATE")
-	while next_state == "idle_state":
-		#control the next state
-		if POWER.value == 1: #might have to treat this input as something other than a boolean (real value?)
-			next_state = "on_off_state"
-		else:
-			next_state = "idle_state"		
-
-	#control the outputs of this state
-	# no outputs
-
-	return (next_state)
 
 def on_off_state():
 	next_state = "on_off_state"
@@ -69,9 +49,7 @@ def on_off_state():
 
 	while next_state == "on_off_state":
 		#control the next state
-		if POWER.value == 0:
-			next_state = "idle_state"
-		elif ON_OFF.is_pressed:
+		if ON_OFF.value == 1:
 			next_state = "sel_state"
 		else:
 			next_state = "on_off_state"
@@ -88,17 +66,15 @@ def sel_state():
 	print("SELECT STATE")
 	while next_state == "sel_state":
 		#control the next state
-		if POWER.value == 0:
-			next_state = "idle_state"
-		elif ON_OFF.is_pressed: ##or inactivity_timer.is_met():
+		if ON_OFF.value == 1: ##or inactivity_timer.is_met():
 			next_state = "on_off_state"
-		elif PROGRAM_R.is_pressed:
+		elif PROGRAM_R.value == 1:
 			user_selection = "program"
 			next_state = "cook_time_state"
-		elif PROBE_R.is_pressed:
+		elif PROBE_R.value == 1:
 			user_selection = "probe"
 			next_state = "heat_setting_state"
-		elif MANUAL_R.is_pressed:
+		elif MANUAL_R.value == 1:
 			user_selection = "manual"
 			next_state = "heat_setting_state"
 		else:
@@ -135,24 +111,22 @@ def cook_time_state():
 	print("COOK TIME STATE")
 	while next_state == "cook_time_state":
 		#control the next state
-		if POWER.value == 0:
-			next_state = "idle_state"
-		elif ON_OFF.is_pressed:
+		if ON_OFF.value == 1:
 			next_state = "on_off_state"
 		##elif inactivity_timer.is_met():
 		##	next_state = "sel_state"
-		elif ENTER_R.is_pressed:
+		elif ENTER_R.value == 1:
 			next_state = "heat_setting_state"
-		elif MANUAL_R.is_pressed:
+		elif MANUAL_R.value == 1:
 			user_selection = "manual"
 			next_state = "heat_setting_state"
-		elif PROBE_R.is_pressed:
+		elif PROBE_R.value == 1:
 			user_selection = "probe"
 			next_state = "heat_setting_state"
-		elif UP_R.is_pressed:
+		elif UP_R.value == 1:
 			if start_time < 23:
 				start_time = start_time + 1		
-		elif DOWN_R.is_pressed:
+		elif DOWN_R.value == 1:
 			if start_time > 0:
 				start_time = start_time - 1
 		else:
@@ -214,22 +188,20 @@ def heat_setting_state():
 	print("HEAT SETTING STATE")
 	while next_state == "heat_setting_state":
 		#control the next state
-		if POWER.value == 0:
-			next_state = "idle_state"
-		elif ON_OFF.is_pressed:
+		if ON_OFF.value == 1:
 			next_state = "on_off_state"
 		##elif inactivity_timer.is_met() and user_selection == "probe":
 		##	next_state = "sel_state"
 		##elif start_timer.is_met() and user_selection != "probe":
 		##	next_state = "display_state"
-		elif ENTER_R.is_pressed:
+		elif ENTER_R.value == 1:
 			if user_selection != "probe":
 				next_state = "display_state"
 			elif heat_selection == "warm":
 				next_state = "display_state"
 			else:
 				next_state = "temp_setting_state"
-		elif PROGRAM_R.is_pressed:
+		elif PROGRAM_R.value == 1:
 			user_selection = "program"
 			next_state = "cook_time_state"
 		else:
@@ -237,13 +209,13 @@ def heat_setting_state():
 		
 		#control the outputs of this state
 		# takes up, down, enter, manual, probe, program
-		if MANUAL_R.is_pressed:
+		if MANUAL_R.value == 1:
 			user_selection = "manual"
 			heat_selection = "high"
-		if PROBE_R.is_pressed:
+		if PROBE_R.value == 1:
 			user_selection = "probe"
 			heat_selection = "high"
-		if UP_R.is_pressed:
+		if UP_R.value == 1:
 		# change heat_selection
 			if heat_selection == "high":
 				heat_selection = "low"
@@ -251,7 +223,7 @@ def heat_setting_state():
 				heat_selection = "warm"
 			else:
 				heat_selection = "high"
-		if DOWN_R.is_pressed:
+		if DOWN_R.value == 1:
 		# change heat_selection
 			if heat_selection == "high":
 				heat_selection = "low"
@@ -301,24 +273,22 @@ def temp_setting_state():
 	print("TEMP SETTING STATE")
 	while next_state == "temp_setting_state":
 		#control the next state
-		if POWER.value == 0:
-			next_state = "idle_state"
-		elif ON_OFF.is_pressed:
+		if ON_OFF.value == 1:
 			next_state = "on_off_state"
-		elif ENTER_R.is_pressed: ## or start_timer.is_met():
+		elif ENTER_R.value == 1: ## or start_timer.is_met():
 			next_state = "display_state"
-		elif MANUAL_R.is_pressed:
+		elif MANUAL_R.value == 1:
 			user_selection = "manual"
 			next_state = "heat_setting_state"
-		elif PROGRAM_R.is_pressed:
+		elif PROGRAM_R.value == 1:
 			user_selection = "program"
 			next_state = "cook_time_state"
-		elif PROBE_R.is_pressed: ######################### TAKE NOTES HERE, NOT SURE IF THIS IS WHAT HAPPENS #############################
+		elif PROBE_R.value == 1: ######################### TAKE NOTES HERE, NOT SURE IF THIS IS WHAT HAPPENS #############################
 			start_temp = 160
-		elif UP_R.is_pressed:
+		elif UP_R.value == 1:
 			if start_temp < 180:
 				start_temp = start_temp + 5
-		elif DOWN_R.is_pressed:
+		elif DOWN_R.value == 1:
 			if start_temp > 140:
 				start_temp = start_temp - 5
 		else:
@@ -369,22 +339,20 @@ def display_state():
 	print("DISPLAY STATE")
 	while next_state == "display_state":
 		#control the next state
-		if POWER.value == 0:
-			next_state = "idle_state"
-		elif ON_OFF.is_pressed:
+		if ON_OFF.value == 1:
 			next_state = "on_off_state"
 		##elif on_off_timer.is_met():
-		##	next_state = "idle_state"
-		elif PROGRAM_R.is_pressed:
+		##	next_state = "on_off_state"
+		elif PROGRAM_R.value == 1:
 			next_state = "cook_time_state"
 			user_selection = "program"
-		elif MANUAL_R.is_pressed:
+		elif MANUAL_R.value == 1:
 			next_state = "heat_setting_state"
 			user_selection = "manual"
-		elif PROBE_R.is_pressed and ENTER_R.is_pressed:
+		elif PROBE_R.value == 1 and ENTER_R.value == 1:
             # temperature setting is changed to C, nothing to tell app
 			next_state = "display_state"
-		elif PROBE_R.is_pressed:
+		elif PROBE_R.value == 1:
 			next_state = "heat_setting_state"
 			user_selection = "probe"
 		else:
@@ -423,7 +391,6 @@ def power_time_met_state():
 
 if __name__== "__main__":
     m = state_machine()
-    m.add_state("idle_state", idle_state)
     m.add_state("on_off_state", on_off_state)
     m.add_state("sel_state", sel_state)
     m.add_state("cook_time_state", cook_time_state)
@@ -431,6 +398,6 @@ if __name__== "__main__":
     m.add_state("temp_setting_state", temp_setting_state)
     m.add_state("display_state", display_state)
     m.add_state("power_time_met_state", None, end_state=1)
-    m.set_start("idle_state") #this is the start command
+    m.set_start("on_off_state") #this is the start command
     print("STARTING RUN")
     m.run()
