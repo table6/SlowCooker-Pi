@@ -62,6 +62,7 @@ def on_off_state():
 
 def sel_state():
 	next_state = "sel_state"
+	time.sleep(0.5)
 	# start inactivity timer
 	# # inactivity_timer.start()
 	print("SELECT STATE")
@@ -103,10 +104,12 @@ def sel_state():
 				user_selection = "manual"
 				next_state = "heat_setting_state"
 
+	print(user_selection)
 	return (next_state)
 
 def cook_time_state():
 	next_state = "cook_time_state"
+	time.sleep(0.5)
 	global start_time, remote_control, remote_input
 	# start inactivity timer
 	# # inactivity_timer.start()
@@ -180,10 +183,12 @@ def cook_time_state():
 				ENTER_W.off()
 				next_state = "heat_setting_state"
 
+	print(cook_time_options[start_time])
 	return (next_state)
 
 def heat_setting_state():
 	next_state = "heat_setting_state"
+	time.sleep(0.5)
 	global user_selection, heat_selection, remote_control, remote_input
 	# start inactivity timer
 	# # inactivity_timer.start()
@@ -268,10 +273,12 @@ def heat_setting_state():
 				else:
 					next_state = "temp_setting_state"
 
+	print(heat_selection)
 	return (next_state)
 	
 def temp_setting_state():
 	next_state = "temp_setting_state"
+	time.sleep(0.5)
 	global start_temp, remote_input, remote_control
 	# start the start timer
 	# # start_timer.start()
@@ -320,10 +327,12 @@ def temp_setting_state():
 				ENTER_W.off()
 				next_state = "display_state"
 
+	print(start_temp)
 	return (next_state)
 
 def display_state():
 	next_state = "display_state"
+	time.sleep(0.5)
 	global user_selection, remote_control_remote_input
 	# cooker is locally programmed, remote control can start
 	remote_control = "yes"
