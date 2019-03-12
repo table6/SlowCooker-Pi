@@ -18,7 +18,7 @@ in_temp = {"type": "-", "temperature": "-", "measurement": "-"}
 in_cook_time = {"start_time": "-", "length": "-"}
 cook_time_options = ["00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30", "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00"]
 user_selection = "-"
-heat_selection = "-"
+heat_selection = "high"
 remote_control = "no"
 start_temp = 160 #degrees F
 start_time = 7 #index
@@ -43,9 +43,10 @@ next_state = "on_off_state"
 def on_off_state():
 	next_state = "on_off_state"
 	print("ON OFF STATE")
+	time.sleep(1)
 
     # Sleep for a period of time to ignore slow cooker initialization.
-    time.sleep(1)
+    #time.sleep(1)
 
 	while next_state == "on_off_state":
 		#control the next state
@@ -106,8 +107,10 @@ def sel_state():
 
 def cook_time_state():
 	next_state = "cook_time_state"
+	global start_time, remote_control, remote_input
 	# start inactivity timer
 	# # inactivity_timer.start()
+	start_time = 7
 	print("COOK TIME STATE")
 	while next_state == "cook_time_state":
 		#control the next state
@@ -181,6 +184,7 @@ def cook_time_state():
 
 def heat_setting_state():
 	next_state = "heat_setting_state"
+	global user_selection, heat_selection, remote_control, remote_input
 	# start inactivity timer
 	# # inactivity_timer.start()
 	# start the start timer
@@ -268,6 +272,7 @@ def heat_setting_state():
 	
 def temp_setting_state():
 	next_state = "temp_setting_state"
+	global start_temp, remote_input, remote_control
 	# start the start timer
 	# # start_timer.start()
 	print("TEMP SETTING STATE")
@@ -319,6 +324,7 @@ def temp_setting_state():
 
 def display_state():
 	next_state = "display_state"
+	global user_selection, remote_control_remote_input
 	# cooker is locally programmed, remote control can start
 	remote_control = "yes"
 	remote_input = "NULL"
