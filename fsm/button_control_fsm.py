@@ -63,6 +63,7 @@ def on_off_state():
 def sel_state():
 	next_state = "sel_state"
 	time.sleep(0.5)
+	global user_selection, remote_control, remote_input
 	# start inactivity timer
 	# # inactivity_timer.start()
 	print("SELECT STATE")
@@ -110,7 +111,7 @@ def sel_state():
 def cook_time_state():
 	next_state = "cook_time_state"
 	time.sleep(0.5)
-	global start_time, remote_control, remote_input
+	global start_time, remote_control, remote_input, user_selection
 	# start inactivity timer
 	# # inactivity_timer.start()
 	start_time = 7
@@ -131,10 +132,12 @@ def cook_time_state():
 			next_state = "heat_setting_state"
 		elif UP_R.is_pressed:
 			if start_time < 23:
-				start_time = start_time + 1		
+				start_time = start_time + 1
+			time.sleep(0.25)
 		elif DOWN_R.is_pressed:
 			if start_time > 0:
 				start_time = start_time - 1
+			time.sleep(0.25)
 		else:
 			next_state = "cook_time_state"
 			
@@ -232,6 +235,7 @@ def heat_setting_state():
 				heat_selection = "warm"
 			else:
 				heat_selection = "high"
+			time.sleep(0.25)
 		if DOWN_R.is_pressed:
 		# change heat_selection
 			if heat_selection == "high":
@@ -239,7 +243,8 @@ def heat_setting_state():
 			elif heat_selection == "low":
 				heat_selection = "warm"
 			else:
-				heat_selection = "high"
+				heat_selection = "high
+			time.sleep(0.25)
 				
 		if remote_control == "yes" and remote_input != "NULL": 
 			# change heat_selection
@@ -279,7 +284,7 @@ def heat_setting_state():
 def temp_setting_state():
 	next_state = "temp_setting_state"
 	time.sleep(0.5)
-	global start_temp, remote_input, remote_control
+	global start_temp, remote_input, remote_control, user_selection
 	# start the start timer
 	# # start_timer.start()
 	print("TEMP SETTING STATE")
@@ -300,9 +305,11 @@ def temp_setting_state():
 		elif UP_R.is_pressed:
 			if start_temp < 180:
 				start_temp = start_temp + 5
+			time.sleep(0.25)
 		elif DOWN_R.is_pressed:
 			if start_temp > 140:
 				start_temp = start_temp - 5
+			time.sleep(0.25)
 		else:
 			next_state = "temp_setting_state"
 			
@@ -333,7 +340,7 @@ def temp_setting_state():
 def display_state():
 	next_state = "display_state"
 	time.sleep(0.5)
-	global user_selection, remote_control_remote_input
+	global user_selection, remote_control, remote_input, heat_selection, start_temp, start_time
 	# cooker is locally programmed, remote control can start
 	remote_control = "yes"
 	remote_input = "NULL"
@@ -350,6 +357,12 @@ def display_state():
 	else:
 		out = {"type": "probe", "temperature": str(start_temp), "measurement": "F"}
 		out2 = {"start_date": datetime.utcnow(), "cook_time": "NA"}
+	
+	# reset global variables
+	user_selection = "-"
+	heat_selection = "high"
+	start_time = 7
+	start_temp = 160
 	
 	print("DISPLAY STATE")
 	while next_state == "display_state":
