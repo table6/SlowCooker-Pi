@@ -243,7 +243,7 @@ def heat_setting_state():
 			elif heat_selection == "low":
 				heat_selection = "warm"
 			else:
-				heat_selection = "high
+				heat_selection = "high"
 			time.sleep(0.25)
 				
 		if remote_control == "yes" and remote_input != "NULL": 
