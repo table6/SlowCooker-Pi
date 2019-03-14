@@ -133,11 +133,11 @@ def cook_time_state():
 		elif UP_R.is_pressed:
 			if start_time < 23:
 				start_time = start_time + 1
-			UP_R.wait_for_release() #time.sleep(0.25)
+			time.sleep(0.20)
 		elif DOWN_R.is_pressed:
 			if start_time > 0:
 				start_time = start_time - 1
-			DOWN_R.wait_for_release() #time.sleep(0.25)
+			time.sleep(0.20)
 		else:
 			next_state = "cook_time_state"
 			
