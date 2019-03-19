@@ -4,14 +4,14 @@ from state_machine import state_machine
 from datetime import datetime
 from gpiozero import OutputDevice, Button, Button, LED
 import time
+import threading
 
 # to fix by Tuesday:
 # 1. way to know if user sent an input... instead of remote_input... (display state, whether to enter user info or not)
-# 2. 
+# 2. actuator script
 # 3. fix output call to app (just need to know how to send it, format is good)
-# 4. 
+# 4. read temp probe script
 # 5. receive input from app (just need to know how to recieve it)
-# 6. create timers
 
 # universal variables
 in_temp = {"type": "-", "temperature": "-", "measurement": "-"}
@@ -23,6 +23,9 @@ remote_control = "no"
 start_temp = 160 #degrees F
 start_time = 7 #index
 remote_input = "NULL"
+inactivity_time_met = 0
+start_time_met = 0
+off_time_met = 0
 # read ports  inputs to the function
 ON_OFF = Button(4) # pin 7
 PROGRAM_R = Button(27) # pin 13
@@ -39,6 +42,17 @@ ENTER_R = Button(16) # pin 36
 ENTER_W = LED(20) # pin 38
 next_state = "on_off_state"
 # input from app won't act like a button, but will be a string
+def inactivityMet():
+	global inactivity_time_met
+	inactivity_time_met = 1
+
+def startMet():
+	global start_time_met
+	start_time_met = 1
+	
+def offMet():
+	global off_time_met
+	off_time_met = 1
 
 def on_off_state():
 	next_state = "on_off_state"
@@ -63,13 +77,14 @@ def on_off_state():
 def sel_state():
 	next_state = "sel_state"
 	time.sleep(0.5)
-	global user_selection, remote_control, remote_input
+	global user_selection, remote_control, remote_input, inactivity_time_met
 	# start inactivity timer
-	# # inactivity_timer.start()
+	inact_timer = threading.Timer(30.0, inactivityMet)
+	inact_timer.start()
 	print("SELECT STATE")
 	while next_state == "sel_state":
 		#control the next state
-		if ON_OFF.is_pressed: ##or inactivity_timer.is_met():
+		if ON_OFF.is_pressed or inactivity_time_met == 1:
 			next_state = "on_off_state"
 		elif PROGRAM_R.is_pressed:
 			user_selection = "program"
@@ -106,22 +121,25 @@ def sel_state():
 				next_state = "heat_setting_state"
 
 	print(user_selection)
+	inact_timer.cancel()
+	inactivity_time_met = 0
 	return (next_state)
 
 def cook_time_state():
 	next_state = "cook_time_state"
 	time.sleep(0.5)
-	global start_time, remote_control, remote_input, user_selection
+	global start_time, remote_control, remote_input, user_selection, inactivity_time_met
 	# start inactivity timer
-	# # inactivity_timer.start()
+	inact_timer = threading.Timer(30.0, inactivityMet)
+	inact_timer.start()
 	start_time = 7
 	print("COOK TIME STATE")
 	while next_state == "cook_time_state":
 		#control the next state
 		if ON_OFF.is_pressed:
 			next_state = "on_off_state"
-		##elif inactivity_timer.is_met():
-		##	next_state = "sel_state"
+		elif inactivity_timer_met == 1:
+			next_state = "sel_state"
 		elif ENTER_R.is_pressed:
 			next_state = "heat_setting_state"
 		elif MANUAL_R.is_pressed:
@@ -187,25 +205,29 @@ def cook_time_state():
 				next_state = "heat_setting_state"
 
 	print(cook_time_options[start_time])
+	inact_timer.cancel()
+	inactivity_time_met = 0
 	return (next_state)
 
 def heat_setting_state():
 	next_state = "heat_setting_state"
 	time.sleep(0.5)
-	global user_selection, heat_selection, remote_control, remote_input
+	global user_selection, heat_selection, remote_control, remote_input, inactivity_time_met, start_time_met
 	# start inactivity timer
-	# # inactivity_timer.start()
+	inact_timer = threading.Timer(30.0, inactivityMet)
+	inact_timer.start()
 	# start the start timer
-	# # start_timer.start()
+	start_timer = threading.Timer(20.0, startMet)
+	start_timer.start()
 	print("HEAT SETTING STATE")
 	while next_state == "heat_setting_state":
 		#control the next state
 		if ON_OFF.is_pressed:
 			next_state = "on_off_state"
-		##elif inactivity_timer.is_met() and user_selection == "probe":
-		##	next_state = "sel_state"
-		##elif start_timer.is_met() and user_selection != "probe":
-		##	next_state = "display_state"
+		elif inactivity_time_met == 1 and user_selection == "probe":
+			next_state = "sel_state"
+		elif start_time_met == 1 and user_selection != "probe":
+			next_state = "display_state"
 		elif ENTER_R.is_pressed:
 			if user_selection != "probe":
 				next_state = "display_state"
@@ -279,20 +301,25 @@ def heat_setting_state():
 					next_state = "temp_setting_state"
 
 	print(heat_selection)
+	inact_timer.cancel()
+	inactivity_time_met = 0
+	start_timer.cancel()
+	start_time_met = 0
 	return (next_state)
 	
 def temp_setting_state():
 	next_state = "temp_setting_state"
 	time.sleep(0.5)
-	global start_temp, remote_input, remote_control, user_selection
+	global start_temp, remote_input, remote_control, user_selection, start_time_met
 	# start the start timer
-	# # start_timer.start()
+	start_timer = threading.Timer(20.0, startMet)
+	start_timer.start()
 	print("TEMP SETTING STATE")
 	while next_state == "temp_setting_state":
 		#control the next state
 		if ON_OFF.is_pressed:
 			next_state = "on_off_state"
-		elif ENTER_R.is_pressed: ## or start_timer.is_met():
+		elif ENTER_R.is_pressed or start_time_met == 1:
 			next_state = "display_state"
 		elif MANUAL_R.is_pressed:
 			user_selection = "manual"
@@ -335,17 +362,20 @@ def temp_setting_state():
 				next_state = "display_state"
 
 	print(start_temp)
+	start_timer.cancel()
+	start_time_met = 0
 	return (next_state)
 
 def display_state():
 	next_state = "display_state"
 	time.sleep(0.5)
-	global user_selection, remote_control, remote_input, heat_selection, start_temp, start_time
+	global user_selection, remote_control, remote_input, heat_selection, start_temp, start_time, off_time_met
 	# cooker is locally programmed, remote control can start
 	remote_control = "yes"
 	remote_input = "NULL"
 	# start on/off timer
-	# # on_off_timer.start()
+	off_timer = threading.Timer(14*60*60, offMet)
+	off_timer.start()
 	# send information to the app
 	# sent as [time, heat, temp]
 	if user_selection == "program":
@@ -369,8 +399,8 @@ def display_state():
 		#control the next state
 		if ON_OFF.is_pressed:
 			next_state = "on_off_state"
-		##elif on_off_timer.is_met():
-		##	next_state = "on_off_state"
+		elif off_time_met == 1:
+			next_state = "on_off_state"
 		elif PROGRAM_R.is_pressed:
 			next_state = "cook_time_state"
 			user_selection = "program"
@@ -412,6 +442,8 @@ def display_state():
 				user_selection = "manual"
 				next_state = "heat_setting_state"
 
+	off_timer.cancel()
+	off_time_met = 0
 	return (next_state)
 
 def power_time_met_state():
