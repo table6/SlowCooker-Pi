@@ -57,6 +57,42 @@ def offMet():
 def on_off_state(): #edited
 	next_state = "on_off_state"
 	ON_OFF = Button(4) # pin 7
+	PROGRAM_R = LED(27) # pin 13
+	PROGRAM_W = LED(22) # pin 15
+	MANUAL_R = LED(18) # pin 12
+	MANUAL_W = LED(23) # pin 16
+	PROBE_R = LED(24) # pin 18
+	PROBE_W = LED(25) # pin 22
+	UP_R = LED(5) # pin 29
+	UP_W = LED(6) # pin 31
+	DOWN_R = LED(13) # pin 33
+	DOWN_W = LED(19) # pin 35
+	ENTER_R = LED(16) # pin 36
+	ENTER_W = LED(20) # pin 38
+	PROGRAM_R.on()
+	PROGRAM_R.off()
+	PROGRAM_W.on()
+	PROGRAM_W.off()
+	MANUAL_R.on()
+	MANUAL_R.off()
+	MANUAL_W.on()
+	MANUAL_W.off()
+	PROBE_R.on()
+	PROBE_R.off()
+	PROBE_W.on()
+	PROBE_W.off()
+	UP_R.on()
+	UP_R.off()
+	UP_W.on()
+	UP_W.off()
+	DOWN_R.on()
+	DOWN_R.off()
+	DOWN_W.on()
+	DOWN_W.off()
+	ENTER_R.on()
+	ENTER_R.off()
+	ENTER_W.on()
+	ENTER_W.off()
 	print("ON OFF STATE")
 	time.sleep(1)
 
