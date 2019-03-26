@@ -158,7 +158,7 @@ def cook_time_state(): #edited
 			#control the next state
 			if ON_OFF.is_pressed:
 				next_state = "on_off_state"
-			elif inactivity_timer_met == 1:
+			elif inactivity_time_met == 1:
 				next_state = "sel_state"
 			elif ENTER_R.is_pressed:
 				next_state = "heat_setting_state"
