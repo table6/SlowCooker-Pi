@@ -76,7 +76,7 @@ def sel_state(): #edited
 	next_state = "sel_state"
 	time.sleep(0.5)
 	global user_selection, remote_control, remote_input, inactivity_time_met
-	if !(remote_control == "yes" and remote_input != "NULL"):
+	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
 		MANUAL_R = Button(18) # pin 12
@@ -142,7 +142,7 @@ def cook_time_state(): #edited
 	next_state = "cook_time_state"
 	time.sleep(0.5)
 	global start_time, remote_control, remote_input, user_selection, inactivity_time_met
-	if !(remote_control == "yes" and remote_input != "NULL"):
+	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		MANUAL_R = Button(18) # pin 12
 		PROBE_R = Button(24) # pin 18
@@ -243,7 +243,7 @@ def heat_setting_state(): #edited
 	next_state = "heat_setting_state"
 	time.sleep(0.5)
 	global user_selection, heat_selection, remote_control, remote_input, inactivity_time_met, start_time_met
-	if !(remote_control == "yes" and remote_input != "NULL"):
+	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
 		MANUAL_R = Button(18) # pin 12
@@ -359,7 +359,7 @@ def temp_setting_state(): #edited
 	next_state = "temp_setting_state"
 	time.sleep(0.5)
 	global start_temp, remote_input, remote_control, user_selection, start_time_met
-	if !(remote_control == "yes" and remote_input != "NULL"):
+	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
 		MANUAL_R = Button(18) # pin 12
