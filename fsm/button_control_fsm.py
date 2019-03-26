@@ -53,10 +53,8 @@ def startMet():
 def offMet():
 	global off_time_met
 	off_time_met = 1
-
-def on_off_state(): #edited
-	next_state = "on_off_state"
-	ON_OFF = Button(4) # pin 7
+	
+def initialize_state():
 	PROGRAM_R = LED(27) # pin 13
 	PROGRAM_W = LED(22) # pin 15
 	MANUAL_R = LED(18) # pin 12
@@ -93,6 +91,11 @@ def on_off_state(): #edited
 	ENTER_R.off()
 	ENTER_W.on()
 	ENTER_W.off()
+	return("on_off_state")
+
+def on_off_state(): #edited
+	next_state = "on_off_state"
+	ON_OFF = Button(4) # pin 7
 	print("ON OFF STATE")
 	time.sleep(1)
 
@@ -548,6 +551,7 @@ if __name__== "__main__":
     m.add_state("temp_setting_state", temp_setting_state)
     m.add_state("display_state", display_state)
     m.add_state("power_time_met_state", None, end_state=1)
-    m.set_start("on_off_state") #this is the start command
+	m.add_state("initialize_state", initialize_state)
+    m.set_start("initialize_state") #this is the start command
     print("STARTING RUN")
     m.run()
