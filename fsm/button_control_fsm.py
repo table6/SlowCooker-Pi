@@ -97,7 +97,7 @@ def on_off_state(): #edited
 	next_state = "on_off_state"
 	ON_OFF = Button(4) # pin 7
 	print("ON OFF STATE")
-	time.sleep(1)
+	time.sleep(0.25)
 
 	while next_state == "on_off_state":
 		#control the next state
@@ -113,7 +113,7 @@ def on_off_state(): #edited
 
 def sel_state(): #edited
 	next_state = "sel_state"
-	time.sleep(0.5)
+	time.sleep(0.25)
 	global user_selection, remote_control, remote_input, inactivity_time_met, in_temp
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
@@ -139,6 +139,8 @@ def sel_state(): #edited
 				next_state = "heat_setting_state"
 			else:
 				next_state = "sel_state"
+		inact_timer.cancel()
+		inactivity_time_met = 0
 			
 	else:
 		#control the outputs of this state
@@ -151,35 +153,36 @@ def sel_state(): #edited
 		PROBE_W = LED(25) # pin 22
 		if remote_input != "NULL":
 			if in_temp["type"] == "probe":
-				PROBE_R.on()
 				PROBE_W.on()
-				pause(0.25)
+				PROBE_R.on()
+				time.sleep(0.25)
 				PROBE_W.off()
+				time.sleep(0.2)
 				user_selection = "probe"
 				next_state = "heat_setting_state"
 			elif in_temp["type"] == "program":
-				PROGRAM_R.on()
 				PROGRAM_W.on()
-				pause(0.25)
+				PROGRAM_R.on()
+				time.sleep(0.25)
 				PROGRAM_W.off()
+				time.sleep(0.2)
 				user_selection = "program"
 				next_state = "cook_time_state"
 			elif in_temp["type"] == "manual":
-				MANUAL_R.on()
 				MANUAL_W.on()
-				pause(0.25)
+				MANUAL_R.on()
+				time.sleep(0.25)
 				MANUAL_W.off()
+				time.sleep(0.2)
 				user_selection = "manual"
 				next_state = "heat_setting_state"
 
 	print(user_selection)
-	inact_timer.cancel()
-	inactivity_time_met = 0
 	return (next_state)
 
 def cook_time_state(): #edited
 	next_state = "cook_time_state"
-	time.sleep(0.5)
+	time.sleep(0.25)
 	global start_time, remote_control, remote_input, user_selection, inactivity_time_met, in_cook_time
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
@@ -217,6 +220,8 @@ def cook_time_state(): #edited
 				time.sleep(0.20)
 			else:
 				next_state = "cook_time_state"
+		inact_timer.cancel()
+		inactivity_time_met = 0
 			
 		# remote control: set time
 	else:
@@ -240,14 +245,14 @@ def cook_time_state(): #edited
 			opt_min = int(opt_min)
 			while hour > opt_hour:
 				UP_W.on()
-				pause(0.25)
+				time.sleep(0.25)
 				UP_W.off()
 				start_time = start_time + 2
 				# update current hour and minute option
 				[opt_hour, opt_min] = cook_time_options[start_time].split(":")
 				opt_hour = int(opt_hour)
 				opt_min = int(opt_min)
-				pause(0.75)
+				time.sleep(0.75)
 			
 			if min == 30:
 				start_time = start_time + 1
@@ -258,29 +263,27 @@ def cook_time_state(): #edited
 					
 			while hour < opt_hour:
 				DOWN_W.on()
-				pause(0.25)
+				time.sleep(0.25)
 				DOWN_W.off()
 				start_time = start_time - 2
 				# update current hour and minute option
 				[opt_hour, opt_min] = cook_time_options[start_time].split(":")
 				opt_hour = int(opt_hour)
 				opt_min = int(opt_min)
-				pause(0.75)
+				time.sleep(0.75)
 					
 			# go to the next state
-				ENTER_W.on()
-				pause(0.25)
-				ENTER_W.off()
-				next_state = "heat_setting_state"
+			ENTER_W.on()
+			time.sleep(0.25)
+			ENTER_W.off()
+			next_state = "heat_setting_state"
 
 	print(cook_time_options[start_time])
-	inact_timer.cancel()
-	inactivity_time_met = 0
 	return (next_state)
 
 def heat_setting_state(): #edited
 	next_state = "heat_setting_state"
-	time.sleep(0.5)
+	time.sleep(0.25)
 	global user_selection, heat_selection, remote_control, remote_input, inactivity_time_met, start_time_met, in_temp
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
@@ -344,17 +347,18 @@ def heat_setting_state(): #edited
 				else:
 					heat_selection = "high"
 				time.sleep(0.25)
+		inact_timer.cancel()
+		inactivity_time_met = 0
+		start_timer.cancel()
+		start_time_met = 0
 		
 	else:
 		UP_R = LED(5) # pin 29
 		UP_W = LED(6) # pin 31	
-		DOWN_R = LED(13) # pin 33
-		DOWN_W = LED(19) # pin 35
 		ENTER_R = LED(16) # pin 36
 		ENTER_W = LED(20) # pin 38
 		if remote_control == "yes" and remote_input != "NULL":
 			UP_R.on()
-			DOWN_R.on()
 			ENTER_R.on()
 			# change heat_selection
 			if in_temp["type"] == "probe":
@@ -363,40 +367,38 @@ def heat_setting_state(): #edited
 				heat_selection = in_temp["temperature"]
 				if heat_selection == "low":
 					UP_W.on()
-					pause(0.25)
+					time.sleep(0.25)
 					UP_W.off()
-					pause(0.75)
+					time.sleep(0.75)
 				elif heat_selection == "warm":
 					UP_W.on()
-					pause(0.25)
+					time.sleep(0.25)
 					UP_W.off()
-					pause(0.50)
+					time.sleep(0.50)
 					UP_W.on()
-					pause(0.25)
+					time.sleep(0.25)
 					UP_W.off()
-					pause(0.75)
+					time.sleep(0.75)
 					
 			# go to next state
-				ENTER_W.on()
-				pause(0.25)
-				ENTER_W.off()
-				if user_selection != "probe":
-					next_state = "display_state"
-				elif heat_selection == "warm":
-					next_state = "display_state"
-				else:
-					next_state = "temp_setting_state"
+			ENTER_W.on()
+			time.sleep(0.25)
+			ENTER_W.off()
+			time.sleep(0.25)
+			print("Enter was pressed")
+			if user_selection != "probe":
+				next_state = "display_state"
+			elif heat_selection == "warm":
+				next_state = "display_state"
+			else:
+				next_state = "temp_setting_state"
 
 	print(heat_selection)
-	inact_timer.cancel()
-	inactivity_time_met = 0
-	start_timer.cancel()
-	start_time_met = 0
 	return (next_state)
 	
 def temp_setting_state(): #edited
 	next_state = "temp_setting_state"
-	time.sleep(0.5)
+	time.sleep(0.25)
 	global start_temp, remote_input, remote_control, user_selection, start_time_met, in_temp
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
@@ -434,6 +436,8 @@ def temp_setting_state(): #edited
 				time.sleep(0.25)
 			else:
 				next_state = "temp_setting_state"
+		start_timer.cancel()
+		start_time_met = 0
 			
 	else:
 		UP_R = LED(5) # pin 29
@@ -448,32 +452,31 @@ def temp_setting_state(): #edited
 			UP_R.on()
 			DOWN_R.on()
 			ENTER_R.on()
-			while start_temp < in_temp["temperature"]:
+			while start_temp < int(in_temp["temperature"]):
 				UP_W.on()
-				pause(0.25)
+				time.sleep(0.25)
 				UP_W.off()
 				start_temp = start_temp + 5
 					
-			while start_temp > in_temp["temperature"]:
+			while start_temp > int(in_temp["temperature"]):
 				DOWN_W.on()
-				pause(0.25)
+				time.sleep(0.25)
 				DOWN_W.off()
 				start_temp = start_temp - 5
 				
 			# got to next state
-				ENTER_W.on()
-				pause(0.25)
-				ENTER_W.off()
-				next_state = "display_state"
+			ENTER_W.on()
+			time.sleep(0.25)
+			ENTER_W.off()
+			time.sleep(0.2)
+			next_state = "display_state"
 
 	print(start_temp)
-	start_timer.cancel()
-	start_time_met = 0
 	return (next_state)
 
 def display_state(): #edited
 	next_state = "display_state"
-	time.sleep(0.5)
+	time.sleep(0.25)
 	global user_selection, remote_control, remote_input, heat_selection, start_temp, start_time, off_time_met, in_cook_time, in_temp
 	# cooker is locally programmed, remote control can start
 	print("DISPLAY STATE")
@@ -494,30 +497,30 @@ def display_state(): #edited
 		out = {"type": "probe", "temperature": str(start_temp), "measurement": "F"}
 		out2 = {"start_date": datetime.utcnow(), "cook_time": "NA"}
 	
+	answer = input("Do you want to test the writing of buttons? y/n: ")
+	if answer == "y":
+		if user_selection == "program":
+			in_temp = {"type": "manual", "temperature": "warm", "measurement": "F"}
+			in_cook_time = {"start_time": datetime.utcnow(), "length": "NA"}
+			remote_input = "new"
+		elif user_selection == "manual":
+			in_temp = {"type": "probe", "temperature": "140", "measurement": "F"}
+			in_cook_time = {"start_time": datetime.utcnow(), "length": "NA"}
+			remote_input = "new"
+		else:
+			in_temp = {"type": "program", "temperature": "low", "measurement": "F"}
+			in_cook_time = {"start_time": datetime.utcnow(), "length": cook_time_options[1]}
+			remote_input = "new"
+		time.sleep(5)
+	else:
+		remote_input = "NULL"
+	
 	# reset global variables
 	user_selection = "-"
 	heat_selection = "high"
 	start_time = 7
 	start_temp = 160
 
-	answer = raw_input("Do you want to test the writing of buttons? y/n: ")
-	if answer == "y":
-		if user_selection == "program":
-			in_temp = {"type": "manual", "temperature": "warm", "measurement": "F"}
-			in_cook_time = {"start_date": datetime.utcnow(), "cook_time": "NA"}
-			remote_input = "new"
-		elif user_selection == "manual":
-			in_temp = {"type": "probe", "temperature": "140", "measurement": "F"}
-			in_cook_time = {"start_date": datetime.utcnow(), "cook_time": "NA"}
-			remote_input = "new"
-		else:
-			in_temp = {"type": "program", "temperature": "low", "measurement": "F"}
-			in_cook_time = {"start_date": datetime.utcnow(), "cook_time": cook_time_options[1]}
-			remote_input = "new"
-		time.sleep(20)
-	else:
-		remote_input = "NULL"
-	
 	ON_OFF = Button(4) # pin 7
 	PROGRAM_R = Button(27) # pin 13
 	MANUAL_R = Button(18) # pin 12
@@ -569,7 +572,7 @@ if __name__== "__main__":
     m.add_state("temp_setting_state", temp_setting_state)
     m.add_state("display_state", display_state)
     m.add_state("power_time_met_state", None, end_state=1)
-	m.add_state("initialize_state", initialize_state)
+    m.add_state("initialize_state", initialize_state)
     m.set_start("initialize_state") #this is the start command
     print("STARTING RUN")
     m.run()
