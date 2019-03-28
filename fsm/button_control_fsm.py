@@ -114,7 +114,7 @@ def on_off_state(): #edited
 def sel_state(): #edited
 	next_state = "sel_state"
 	time.sleep(0.5)
-	global user_selection, remote_control, remote_input, inactivity_time_met
+	global user_selection, remote_control, remote_input, inactivity_time_met, in_temp
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
@@ -180,7 +180,7 @@ def sel_state(): #edited
 def cook_time_state(): #edited
 	next_state = "cook_time_state"
 	time.sleep(0.5)
-	global start_time, remote_control, remote_input, user_selection, inactivity_time_met
+	global start_time, remote_control, remote_input, user_selection, inactivity_time_met, in_cook_time
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		MANUAL_R = Button(18) # pin 12
@@ -281,7 +281,7 @@ def cook_time_state(): #edited
 def heat_setting_state(): #edited
 	next_state = "heat_setting_state"
 	time.sleep(0.5)
-	global user_selection, heat_selection, remote_control, remote_input, inactivity_time_met, start_time_met
+	global user_selection, heat_selection, remote_control, remote_input, inactivity_time_met, start_time_met, in_temp
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
@@ -397,7 +397,7 @@ def heat_setting_state(): #edited
 def temp_setting_state(): #edited
 	next_state = "temp_setting_state"
 	time.sleep(0.5)
-	global start_temp, remote_input, remote_control, user_selection, start_time_met
+	global start_temp, remote_input, remote_control, user_selection, start_time_met, in_temp
 	if not (remote_control == "yes" and remote_input != "NULL"):
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
@@ -474,8 +474,9 @@ def temp_setting_state(): #edited
 def display_state(): #edited
 	next_state = "display_state"
 	time.sleep(0.5)
-	global user_selection, remote_control, remote_input, heat_selection, start_temp, start_time, off_time_met
+	global user_selection, remote_control, remote_input, heat_selection, start_temp, start_time, off_time_met, in_cook_time, in_temp
 	# cooker is locally programmed, remote control can start
+	print("DISPLAY STATE")
 	remote_control = "yes"
 	remote_input = "NULL"
 	# start on/off timer
@@ -498,8 +499,25 @@ def display_state(): #edited
 	heat_selection = "high"
 	start_time = 7
 	start_temp = 160
+
+	answer = raw_input("Do you want to test the writing of buttons? y/n: ")
+	if answer == "y":
+		if user_selection == "program":
+			in_temp = {"type": "manual", "temperature": "warm", "measurement": "F"}
+			in_cook_time = {"start_date": datetime.utcnow(), "cook_time": "NA"}
+			remote_input = "new"
+		elif user_selection == "manual":
+			in_temp = {"type": "probe", "temperature": "140", "measurement": "F"}
+			in_cook_time = {"start_date": datetime.utcnow(), "cook_time": "NA"}
+			remote_input = "new"
+		else:
+			in_temp = {"type": "program", "temperature": "low", "measurement": "F"}
+			in_cook_time = {"start_date": datetime.utcnow(), "cook_time": cook_time_options[1]}
+			remote_input = "new"
+		time.sleep(20)
+	else:
+		remote_input = "NULL"
 	
-	print("DISPLAY STATE")
 	ON_OFF = Button(4) # pin 7
 	PROGRAM_R = Button(27) # pin 13
 	MANUAL_R = Button(18) # pin 12
