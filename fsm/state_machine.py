@@ -1,7 +1,9 @@
 from datetime import datetime
 
+
 class state_machine(object):
     """description of class"""
+
     def __init__(self):
         self.handlers = {}
         self.startState = None
@@ -22,7 +24,8 @@ class state_machine(object):
         except:
             raise InitializationError("must call .setStart() before .run()")
         if not self.endStates:
-            raise InitializationError("at least one state must be an end_state")
+            raise InitializationError(
+                "at least one state must be an end_state")
 
         while True:
             current_time = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.now())
