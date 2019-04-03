@@ -582,6 +582,151 @@ def display_state(): #edited
 	off_time_met = 0
 	return (next_state)
 
+def write_state():
+    UP_R = LED(5) # pin 29
+    UP_W = LED(6) # pin 31
+    DOWN_R = LED(13) # pin 33
+    DOWN_W = LED(19) # pin 35
+    ENTER_R = LED(16) # pin 36
+    ENTER_W = LED(20) # pin 38
+	
+	# choose the cook setting
+    if in_temp["type"] == "probe":
+        print("writing to the probe button...")
+        PROBE_R = LED(24) # pin 18
+        PROBE_W = LED(25) # pin 22
+        time.sleep(.2)
+        PROBE_W.on()
+        PROBE_R.on()
+        time.sleep(0.25)
+        PROBE_W.off()
+        time.sleep(0.2)
+        user_selection = "probe"
+    elif in_temp["type"] == "program":
+        print("writing to the program button...")
+        PROGRAM_R = LED(27) # pin 13
+        PROGRAM_W = LED(22) # pin 15
+        time.sleep(0.2)
+        PROGRAM_W.on()
+        PROGRAM_R.on()
+        time.sleep(0.25)
+        PROGRAM_W.off()
+        time.sleep(0.2)
+        user_selection = "program"
+    elif in_temp["type"] == "manual":
+        print("writing to the manual button...")
+        MANUAL_R = LED(18) # pin 12
+        MANUAL_W = LED(23) # pin 16
+        time.sleep(0.2)
+        MANUAL_W.on()
+        MANUAL_R.on()
+        time.sleep(0.25)
+        MANUAL_W.off()
+        time.sleep(0.2)
+        user_selection = "manual"
+	
+	# if program is chosen, go here
+	if user_selection == "program":
+        UP_R.on()
+        DOWN_R.on()
+        ENTER_R.on()
+        # get the hour and minute selection as integers
+        [hour, min] = in_cook_time["length"].split(":")
+        hour = int(hour)
+        min = int(min)
+        # get the hour and minute current option as integers
+        [opt_hour, opt_min] = cook_time_options[start_time].split(":")
+        opt_hour = int(opt_hour)
+        opt_min = int(opt_min)
+        while hour > opt_hour:
+            UP_W.on()
+            time.sleep(0.25)
+            UP_W.off()
+            time.sleep(0.2)
+            start_time = start_time + 2
+            # update current hour and minute option
+            [opt_hour, opt_min] = cook_time_options[start_time].split(":")
+            opt_hour = int(opt_hour)
+            opt_min = int(opt_min)
+            time.sleep(0.75)
+        if min == 30:
+            start_time = start_time + 1
+            # update current hour and minute option
+            [opt_hour, opt_min] = cook_time_options[start_time].split(":")
+            opt_hour = int(opt_hour)
+            opt_min = int(opt_min)
+        while hour < opt_hour:
+            DOWN_W.on()
+            time.sleep(0.25)
+            DOWN_W.off()
+            time.sleep(0.2)
+            start_time = start_time - 2
+            # update current hour and minute option
+            [opt_hour, opt_min] = cook_time_options[start_time].split(":")
+            opt_hour = int(opt_hour)
+            opt_min = int(opt_min)
+            time.sleep(0.75)
+        # go to the next state
+        ENTER_W.on()
+        time.sleep(0.25)
+        next_state = "heat_setting_state"
+	
+	# choose the heat setting
+	if in_temp["type"] == "probe":
+        heat_selection = "high"
+    else:
+        heat_selection = in_temp["temperature"]
+        #time.sleep(0.2)
+        if heat_selection == "low":
+            UP_R.on()
+            UP_W.on()
+            time.sleep(0.25)
+        elif heat_selection == "warm":
+            UP_R.on()
+            UP_W.on()
+            time.sleep(.2)
+            UP_R.off()
+            time.sleep(0.25)
+            UP_R.on()
+            time.sleep(0.25)
+	# go to next state
+    time.sleep(0.2)
+    ENTER_R.on()
+    ENTER_W.on()
+    time.sleep(0.25)
+    #ENTER_R.off()
+    #time.sleep(0.2)
+    print("Enter was pressed
+	
+	# choose probe temp setting if probe is chosen
+	if user_selection == "probe":
+	    time.sleep(0.2)
+		junk = input("waiting for something ... ")
+		while start_temp < int(in_temp["temperature"]):
+			UP_R = LED(5) # pin 29
+			UP_W = LED(6) # pin 31
+			UP_R.on()
+			UP_W.on()
+			time.sleep(0.25)
+			start_temp = start_temp + 5
+			UP_R.off()
+		while start_temp > int(in_temp["temperature"]):
+			DOWN_R = LED(13) # pin 33
+			DOWN_W = LED(19) # pin 35
+			DOWN_R.on()
+			DOWN_W.on()
+			time.sleep(0.25)
+			DOWN_R.off()
+			start_temp = start_temp - 5
+		# got to next state
+		time.sleep(0.2)
+		#ENTER_R.on()
+		#ENTER_W.on()
+		time.sleep(0.25)
+		ENTER_W.off()
+		ENTER_R.off()
+		time.sleep(0.2)
+
 def power_time_met_state():
 	return (next_state)
 
@@ -595,6 +740,7 @@ if __name__== "__main__":
     m.add_state("display_state", display_state)
     m.add_state("power_time_met_state", None, end_state=1)
     m.add_state("initialize_state", initialize_state)
+	m.add_state("write_state", write_state)
     m.set_start("initialize_state") #this is the start command
     print("STARTING RUN")
     m.run()
