@@ -455,26 +455,28 @@ def temp_setting_state(): #edited
 		start_time_met = 0
 			
 	else:
-		UP_R = LED(5) # pin 29
-		UP_W = LED(6) # pin 31
-		DOWN_R = LED(13) # pin 33
-		DOWN_W = LED(19) # pin 35
 		#control the outputs of this state
 		# takes up, down, enter, manual, program
 		if remote_input != "NULL": 
 			ENTER_R = LED(16) # pin 36
 			ENTER_W = LED(20) # pin 38
 			time.sleep(0.2)
-			ENTER_W.off()
-			ENTER_R.off()
+			#ENTER_W.off()
+			#ENTER_R.off()
+			junk = input("waiting for something ... ")
+			
 			while start_temp < int(in_temp["temperature"]):
+				UP_R = LED(5) # pin 29
+				UP_W = LED(6) # pin 31
 				UP_R.on()
 				UP_W.on()
 				time.sleep(0.25)
-				UP_R.off()
 				start_temp = start_temp + 5
+				UP_R.off()
 					
 			while start_temp > int(in_temp["temperature"]):
+				DOWN_R = LED(13) # pin 33
+				DOWN_W = LED(19) # pin 35
 				DOWN_R.on()
 				DOWN_W.on()
 				time.sleep(0.25)
@@ -487,7 +489,7 @@ def temp_setting_state(): #edited
 			ENTER_W.on()
 			time.sleep(0.25)
 			#ENTER_W.off()
-			#ENTER_R.off()
+			ENTER_R.off()
 			time.sleep(0.2)
 			next_state = "display_state"
 
