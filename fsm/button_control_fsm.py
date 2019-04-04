@@ -576,20 +576,28 @@ def display_state(): #edited
 		if remote_control == "yes" and remote_input != "NULL":
 			# request info 
 			# if info is given, go to the select state
-			next_state = "sel_state"
+			next_state = "write_state"
 
 	off_timer.cancel()
 	off_time_met = 0
 	return (next_state)
 
 def write_state():
-    UP_R = LED(5) # pin 29
-    UP_W = LED(6) # pin 31
-    DOWN_R = LED(13) # pin 33
-    DOWN_W = LED(19) # pin 35
-    ENTER_R = LED(16) # pin 36
-    ENTER_W = LED(20) # pin 38
+    #UP_R = LED(5) # pin 29
+    #UP_W = LED(6) # pin 31
+    #DOWN_R = LED(13) # pin 33
+    #DOWN_W = LED(19) # pin 35
+    #ENTER_R = LED(16) # pin 36
+    #ENTER_W = LED(20) # pin 38
 	
+    #UP_R.off()
+    #UP_W.off()
+    #DOWN_R.off()
+    #DOWN_W.off()
+    #ENTER_R.off()
+    #ENTER_W.off()
+
+    global in_temp, in_cook_time, start_temp, start_time
 	# choose the cook setting
     if in_temp["type"] == "probe":
         print("writing to the probe button...")
@@ -624,12 +632,21 @@ def write_state():
         MANUAL_W.off()
         time.sleep(0.2)
         user_selection = "manual"
-	
+
+    UP_W = LED(6)
+    UP_W.off()
+    UP_R = LED(5)
+    DOWN_W = LED(19)
+    DOWN_W.off()
+    DOWN_R = LED(13)
+    ENTER_W = LED(20)
+    ENTER_W.off()
+    ENTER_R = LED(16)
 	# if program is chosen, go here
-	if user_selection == "program":
+    if user_selection == "program":
         UP_R.on()
         DOWN_R.on()
-        ENTER_R.on()
+        #ENTER_R.on()
         # get the hour and minute selection as integers
         [hour, min] = in_cook_time["length"].split(":")
         hour = int(hour)
@@ -667,13 +684,16 @@ def write_state():
             opt_min = int(opt_min)
             time.sleep(0.75)
         # go to the next state
-        ENTER_W.on()
+        #ENTER_W.on()
         time.sleep(0.25)
         next_state = "heat_setting_state"
-	
+
+    #ENTER_R = LED(16) 
+    #ENTER_W = LED(20)
 	# choose the heat setting
-	if in_temp["type"] == "probe":
+    if in_temp["type"] == "probe":
         heat_selection = "high"
+        time.sleep(2)
     else:
         heat_selection = in_temp["temperature"]
         #time.sleep(0.2)
@@ -689,43 +709,47 @@ def write_state():
             time.sleep(0.25)
             UP_R.on()
             time.sleep(0.25)
+
+#    ENTER_R = LED(16)
+#    ENTER_W = LED(20)
 	# go to next state
-    time.sleep(0.2)
-    ENTER_R.on()
-    ENTER_W.on()
+    time.sleep(2)
+    #ENTER_R.on()
+    #ENTER_W.on()
     time.sleep(0.25)
     #ENTER_R.off()
     #time.sleep(0.2)
-    print("Enter was pressed
+    print("Enter was pressed")
 	
 	# choose probe temp setting if probe is chosen
-	if user_selection == "probe":
-	    time.sleep(0.2)
-		junk = input("waiting for something ... ")
-		while start_temp < int(in_temp["temperature"]):
-			UP_R = LED(5) # pin 29
-			UP_W = LED(6) # pin 31
-			UP_R.on()
-			UP_W.on()
-			time.sleep(0.25)
-			start_temp = start_temp + 5
-			UP_R.off()
-		while start_temp > int(in_temp["temperature"]):
-			DOWN_R = LED(13) # pin 33
-			DOWN_W = LED(19) # pin 35
-			DOWN_R.on()
-			DOWN_W.on()
-			time.sleep(0.25)
-			DOWN_R.off()
-			start_temp = start_temp - 5
-		# got to next state
-		time.sleep(0.2)
-		#ENTER_R.on()
-		#ENTER_W.on()
-		time.sleep(0.25)
-		ENTER_W.off()
-		ENTER_R.off()
-		time.sleep(0.2)
+    if user_selection == "probe":
+        time.sleep(0.2)
+        junk = input("waiting for something ... ")
+        print("start temp = ", start_temp)
+        while start_temp < int(in_temp["temperature"]):
+            print("pressing up")
+            UP_R.on()
+            UP_W.on()
+            time.sleep(0.25)
+            start_temp = start_temp + 5
+            UP_R.off()
+        while start_temp > int(in_temp["temperature"]):
+            print("pressing down")
+            DOWN_R.on()
+            DOWN_W.on()
+            time.sleep(0.25)
+            DOWN_R.off()
+            start_temp = start_temp - 5
+        # got to next state
+        time.sleep(0.2)
+        #ENTER_R.on()
+        #ENTER_W.on()
+        time.sleep(0.25)
+        ENTER_W.off()
+        ENTER_R.off()
+        time.sleep(0.2)
+
+    return ("display_state")
 
 def power_time_met_state():
 	return (next_state)
@@ -740,7 +764,7 @@ if __name__== "__main__":
     m.add_state("display_state", display_state)
     m.add_state("power_time_met_state", None, end_state=1)
     m.add_state("initialize_state", initialize_state)
-	m.add_state("write_state", write_state)
+    m.add_state("write_state", write_state)
     m.set_start("initialize_state") #this is the start command
     print("STARTING RUN")
     m.run()
