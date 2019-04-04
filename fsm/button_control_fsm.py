@@ -633,20 +633,18 @@ def write_state():
         time.sleep(0.2)
         user_selection = "manual"
 
-    UP_W = LED(6)
-    UP_W.off()
-    UP_R = LED(5)
-    DOWN_W = LED(19)
-    DOWN_W.off()
-    DOWN_R = LED(13)
-    ENTER_W = LED(20)
-    ENTER_W.off()
-    ENTER_R = LED(16)
+    # UP_W = LED(6)
+    # UP_W.off()
+    # UP_R = LED(5)
+    # DOWN_W = LED(19)
+    # DOWN_W.off()
+    # DOWN_R = LED(13)
+    # ENTER_W = LED(20)
+    # ENTER_W.off()
+    # ENTER_R = LED(16)
+	junk = input("acknowledge probe was pressed :")
 	# if program is chosen, go here
     if user_selection == "program":
-        UP_R.on()
-        DOWN_R.on()
-        #ENTER_R.on()
         # get the hour and minute selection as integers
         [hour, min] = in_cook_time["length"].split(":")
         hour = int(hour)
@@ -656,9 +654,9 @@ def write_state():
         opt_hour = int(opt_hour)
         opt_min = int(opt_min)
         while hour > opt_hour:
-            UP_W.on()
+            press_up()
             time.sleep(0.25)
-            UP_W.off()
+            press_up()
             time.sleep(0.2)
             start_time = start_time + 2
             # update current hour and minute option
@@ -666,16 +664,19 @@ def write_state():
             opt_hour = int(opt_hour)
             opt_min = int(opt_min)
             time.sleep(0.75)
+		
         if min == 30:
             start_time = start_time + 1
+			press_up()
             # update current hour and minute option
             [opt_hour, opt_min] = cook_time_options[start_time].split(":")
             opt_hour = int(opt_hour)
             opt_min = int(opt_min)
+		
         while hour < opt_hour:
-            DOWN_W.on()
+            press_down()
             time.sleep(0.25)
-            DOWN_W.off()
+            press_down()
             time.sleep(0.2)
             start_time = start_time - 2
             # update current hour and minute option
@@ -684,13 +685,11 @@ def write_state():
             opt_min = int(opt_min)
             time.sleep(0.75)
         # go to the next state
-        #ENTER_W.on()
+        press_enter()
         time.sleep(0.25)
         next_state = "heat_setting_state"
 
-    #ENTER_R = LED(16) 
-    #ENTER_W = LED(20)
-	# choose the heat setting
+    # choose the heat setting
     if in_temp["type"] == "probe":
         heat_selection = "high"
         time.sleep(2)
@@ -698,28 +697,17 @@ def write_state():
         heat_selection = in_temp["temperature"]
         #time.sleep(0.2)
         if heat_selection == "low":
-            UP_R.on()
-            UP_W.on()
-            time.sleep(0.25)
+            press_up()
         elif heat_selection == "warm":
-            UP_R.on()
-            UP_W.on()
-            time.sleep(.2)
-            UP_R.off()
-            time.sleep(0.25)
-            UP_R.on()
-            time.sleep(0.25)
+            press_up()
+			time.sleep(0.2)
+			press_up()
 
-#    ENTER_R = LED(16)
-#    ENTER_W = LED(20)
 	# go to next state
     time.sleep(2)
-    #ENTER_R.on()
-    #ENTER_W.on()
+	press_enter()
     time.sleep(0.25)
-    #ENTER_R.off()
-    #time.sleep(0.2)
-    print("Enter was pressed")
+    junk = input("acknowledge heat setting was passed:")
 	
 	# choose probe temp setting if probe is chosen
     if user_selection == "probe":
@@ -728,28 +716,45 @@ def write_state():
         print("start temp = ", start_temp)
         while start_temp < int(in_temp["temperature"]):
             print("pressing up")
-            UP_R.on()
-            UP_W.on()
-            time.sleep(0.25)
+			press_up()
             start_temp = start_temp + 5
-            UP_R.off()
         while start_temp > int(in_temp["temperature"]):
             print("pressing down")
-            DOWN_R.on()
-            DOWN_W.on()
-            time.sleep(0.25)
-            DOWN_R.off()
+			press_down()
             start_temp = start_temp - 5
         # got to next state
         time.sleep(0.2)
-        #ENTER_R.on()
-        #ENTER_W.on()
-        time.sleep(0.25)
-        ENTER_W.off()
-        ENTER_R.off()
+        press_enter()
         time.sleep(0.2)
 
     return ("display_state")
+	
+def press_up():
+	UP_W = LED(6)
+    UP_R = LED(5)
+	UP_R.on()
+	UP_W.on()
+	time.sleep(0.2)
+	UP_W.off()
+	return()
+	
+def press_down():
+	DOWN_W = LED(6)
+    DOWN_R = LED(5)
+	DOWN_R.on()
+	DOWN_W.on()
+	time.sleep(0.2)
+	DOWN_W.off()
+	return()
+	
+def press_enter():
+	ENTER_W = LED(6)
+    ENTER_R = LED(5)
+	ENTER_R.on()
+	ENTER_W.on()
+	time.sleep(0.2)
+	ENTER_W.off()
+	return()
 
 def power_time_met_state():
 	return (next_state)
