@@ -419,7 +419,6 @@ def temp_setting_state(): #edited
 		ON_OFF = Button(4) # pin 7
 		PROGRAM_R = Button(27) # pin 13
 		MANUAL_R = Button(18) # pin 12
-		PROBE_R = Button(24) # pin 18
 		UP_R = Button(5) # pin 29
 		DOWN_R = Button(13) # pin 33
 		ENTER_R = Button(16) # pin 36
@@ -439,8 +438,6 @@ def temp_setting_state(): #edited
 			elif PROGRAM_R.is_pressed:
 				user_selection = "program"
 				next_state = "cook_time_state"
-			elif PROBE_R.is_pressed: ######################### TAKE NOTES HERE, NOT SURE IF THIS IS WHAT HAPPENS #############################
-				start_temp = 160
 			elif UP_R.is_pressed:
 				if start_temp < 180:
 					start_temp = start_temp + 5
@@ -521,19 +518,19 @@ def display_state(): #edited
 	
 	answer = input("Do you want to test the writing of buttons? y/n: ")
 	if answer == "y":
-		if user_selection == "program":
-			in_temp = {"type": "manual", "temperature": "low", "measurement": "F"}
-			in_cook_time = {"start_time": datetime.utcnow(), "length": "NA"}
-			remote_input = "new"
-		elif user_selection == "manual":
-			in_temp = {"type": "probe", "temperature": "140", "measurement": "F"}
-			in_cook_time = {"start_time": datetime.utcnow(), "length": "NA"}
-			remote_input = "new"
-		else:
-			in_temp = {"type": "program", "temperature": "low", "measurement": "F"}
-			in_cook_time = {"start_time": datetime.utcnow(), "length": cook_time_options[1]}
-			remote_input = "new"
-		time.sleep(5)
+		#if user_selection == "probe":
+		in_temp = {"type": "program", "temperature": "warm", "measurement": "F"}
+		in_cook_time = {"start_time": datetime.utcnow(), "length": "12:00"}
+		remote_input = "new"
+		#elif user_selection == "manual":
+		#	in_temp = {"type": "program", "temperature": "warm", "measurement": "F"}
+		#	in_cook_time = {"start_time": datetime.utcnow(), "length": "05:00"}
+		#	remote_input = "new"
+		#else:
+		#	in_temp = {"type": "probe", "temperature": "155", "measurement": "F"}
+		#	in_cook_time = {"start_time": datetime.utcnow(), "length": "NA"}
+		#	remote_input = "new"
+		time.sleep(2.5)
 	else:
 		remote_input = "NULL"
 	
@@ -583,20 +580,6 @@ def display_state(): #edited
 	return (next_state)
 
 def write_state():
-    #UP_R = LED(5) # pin 29
-    #UP_W = LED(6) # pin 31
-    #DOWN_R = LED(13) # pin 33
-    #DOWN_W = LED(19) # pin 35
-    #ENTER_R = LED(16) # pin 36
-    #ENTER_W = LED(20) # pin 38
-	
-    #UP_R.off()
-    #UP_W.off()
-    #DOWN_R.off()
-    #DOWN_W.off()
-    #ENTER_R.off()
-    #ENTER_W.off()
-
     global in_temp, in_cook_time, start_temp, start_time
 	# choose the cook setting
     if in_temp["type"] == "probe":
@@ -633,57 +616,40 @@ def write_state():
         time.sleep(0.2)
         user_selection = "manual"
 
-    # UP_W = LED(6)
-    # UP_W.off()
-    # UP_R = LED(5)
-    # DOWN_W = LED(19)
-    # DOWN_W.off()
-    # DOWN_R = LED(13)
-    # ENTER_W = LED(20)
-    # ENTER_W.off()
-    # ENTER_R = LED(16)
-	junk = input("acknowledge probe was pressed :")
 	# if program is chosen, go here
     if user_selection == "program":
         # get the hour and minute selection as integers
-        [hour, min] = in_cook_time["length"].split(":")
-        hour = int(hour)
-        min = int(min)
+        user_cook_time = in_cook_time["length"].split(":")
+        hour = int(user_cook_time[0])
+        minut = int(user_cook_time[1])
         # get the hour and minute current option as integers
-        [opt_hour, opt_min] = cook_time_options[start_time].split(":")
-        opt_hour = int(opt_hour)
-        opt_min = int(opt_min)
+        defined_time = cook_time_options[start_time].split(":")
+        opt_hour = int(defined_time[0])
         while hour > opt_hour:
             press_up()
             time.sleep(0.25)
             press_up()
             time.sleep(0.2)
-            start_time = start_time + 2
+            start_time += 2
             # update current hour and minute option
-            [opt_hour, opt_min] = cook_time_options[start_time].split(":")
-            opt_hour = int(opt_hour)
-            opt_min = int(opt_min)
+            opt_hour += 1
             time.sleep(0.75)
 		
-        if min == 30:
+        if minut == 30:
             start_time = start_time + 1
-			press_up()
+            press_up()
             # update current hour and minute option
-            [opt_hour, opt_min] = cook_time_options[start_time].split(":")
-            opt_hour = int(opt_hour)
-            opt_min = int(opt_min)
-		
+
         while hour < opt_hour:
             press_down()
             time.sleep(0.25)
             press_down()
             time.sleep(0.2)
-            start_time = start_time - 2
+            start_time -= 2
             # update current hour and minute option
-            [opt_hour, opt_min] = cook_time_options[start_time].split(":")
-            opt_hour = int(opt_hour)
-            opt_min = int(opt_min)
+            opt_hour -= 1
             time.sleep(0.75)
+
         # go to the next state
         press_enter()
         time.sleep(0.25)
@@ -692,7 +658,7 @@ def write_state():
     # choose the heat setting
     if in_temp["type"] == "probe":
         heat_selection = "high"
-        time.sleep(2)
+        time.sleep(0.2)
     else:
         heat_selection = in_temp["temperature"]
         #time.sleep(0.2)
@@ -700,61 +666,70 @@ def write_state():
             press_up()
         elif heat_selection == "warm":
             press_up()
-			time.sleep(0.2)
-			press_up()
+            time.sleep(0.2)
+            press_up()
 
 	# go to next state
-    time.sleep(2)
-	press_enter()
     time.sleep(0.25)
-    junk = input("acknowledge heat setting was passed:")
+    press_enter()
+    time.sleep(0.25)
+    print("acknowledge heat setting was passed:")
 	
 	# choose probe temp setting if probe is chosen
     if user_selection == "probe":
-        time.sleep(0.2)
-        junk = input("waiting for something ... ")
         print("start temp = ", start_temp)
         while start_temp < int(in_temp["temperature"]):
             print("pressing up")
-			press_up()
+            press_up()
+            time.sleep(0.2)
+            #press_up()
+            #time.sleep(1)
             start_temp = start_temp + 5
         while start_temp > int(in_temp["temperature"]):
             print("pressing down")
-			press_down()
+            time.sleep(0.2)
+            press_down()
             start_temp = start_temp - 5
         # got to next state
-        time.sleep(0.2)
+        time.sleep(0.25)
+        print("acknowledge that enter is about to be pressed")
         press_enter()
         time.sleep(0.2)
 
     return ("display_state")
 	
 def press_up():
-	UP_W = LED(6)
+    UP_W = LED(6)
     UP_R = LED(5)
-	UP_R.on()
-	UP_W.on()
-	time.sleep(0.2)
-	UP_W.off()
-	return()
+    time.sleep(0.2)
+    UP_W.on()
+    UP_R.on()
+    time.sleep(0.25)
+    #UP_W.off()
+    #time.sleep(0.2)
+    return()
 	
 def press_down():
-	DOWN_W = LED(6)
-    DOWN_R = LED(5)
-	DOWN_R.on()
-	DOWN_W.on()
-	time.sleep(0.2)
-	DOWN_W.off()
-	return()
+    DOWN_W = LED(19)
+    DOWN_R = LED(13)
+    time.sleep(0.2)
+    DOWN_W.on()
+    DOWN_R.on()
+    time.sleep(0.25)
+    #DOWN_R.off()
+    #time.sleep(0.2)
+    return()
 	
 def press_enter():
-	ENTER_W = LED(6)
-    ENTER_R = LED(5)
-	ENTER_R.on()
-	ENTER_W.on()
-	time.sleep(0.2)
-	ENTER_W.off()
-	return()
+    ENTER_W = LED(20)
+    ENTER_R = LED(16)
+    time.sleep(0.2)
+    ENTER_W.on()
+    ENTER_R.on()
+    time.sleep(0.25)
+    ENTER_W.off() # tested and correct, turning off R presses it twice
+    time.sleep(0.2)
+    return()
 
 def power_time_met_state():
 	return (next_state)
