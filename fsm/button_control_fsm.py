@@ -17,8 +17,10 @@ import threading
 # universal variables
 in_temp = {"type": "-", "temperature": "-", "measurement": "-"}
 in_cook_time = {"start_time": "-", "length": "-"}
-cook_time_options = ["00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30", "04:00", "04:30", "05:00", "05:30",
-                     "06:00", "06:30", "07:00", "07:30", "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00"]
+cook_time_options = ["00:30", "01:00", "01:30", "02:00", "02:30", "03:00",
+                     "03:30", "04:00", "04:30", "05:00", "05:30", "06:00",
+                     "06:30", "07:00", "07:30", "08:00", "08:30", "09:00",
+                     "09:30", "10:00", "10:30", "11:00", "11:30", "12:00"]
 user_selection = "-"
 heat_selection = "high"
 remote_control = "no"
@@ -28,9 +30,12 @@ remote_input = "NULL"
 inactivity_time_met = 0
 start_time_met = 0
 off_time_met = 0
-next_state = "on_off_state"
 ACTUATOR = 1  # LED(17) # pin 11
 actuator_status = 0  # 1 = actuated, 0 = not actuated
+
+addr = ""
+port = ""
+mongo_client = mongoslowcooker.MongoSlowcookerClient(addr, port)
 
 
 def inactivityMet():
@@ -113,6 +118,7 @@ def on_off_state():  # edited
 def sel_state():  # edited
     next_state = "sel_state"
     time.sleep(0.1)
+
     global user_selection, inactivity_time_met
 
     ON_OFF = Button(4)  # pin 7
@@ -333,6 +339,7 @@ def display_state():  # edited
 
     global user_selection, remote_control, remote_input, heat_selection
     global start_temp, start_time, off_time_met, in_cook_time, in_temp
+    global mongo_client
 
     # cooker is locally programmed, remote control can start
     print("DISPLAY STATE")
@@ -359,13 +366,11 @@ def display_state():  # edited
 
     out2 = {"cook_time": cook_time_options[start_time]}
 
-    # TODO: Need mongoslowcookerclient here
-    addr = ""
-    port = ""
-    client = mongoslowcooker.MongoSlowcookerClient(addr, port)
-
-    client.add_data_to_collection(out, "temperature")
-    client.add_data_to_collection(out2, "cook_time")
+    # Will block here.
+    print("\tPushing temperature to server...")
+    mongo_client.add_data_to_collection(out, "temperature")
+    print("\tPushing cook time to server...")
+    mongo_client.add_data_to_collection(out2, "cook_time")
 
     # reset global variables
     user_selection = "-"
@@ -384,7 +389,7 @@ def display_state():  # edited
         if ON_OFF.is_pressed:
             next_state = "on_off_state"
         elif off_time_met == 1:
-            next_state = "on_off_state"
+            next_state = "power_time_met_state"
         elif PROGRAM_R.is_pressed:
             next_state = "cook_time_state"
             user_selection = "program"
@@ -401,9 +406,15 @@ def display_state():  # edited
             next_state = "display_state"
 
             # ask for instructions
-            # actuate = input("Toggle the actuators? (y/n):")
-            # if actuate == "y":
-            #	toggle_actuators()
+            # Will block here.
+            mongo_client.update_server_feed()
+            temperature_feed = mongo_client.server_feed["control_temperature"]
+            if temperature_feed is not None:
+                in_temp = temperature_feed
+
+            cook_time_feed = mongo_client.server_feed["control_cook_time"]
+            if cook_time_feed is not None:
+                in_cook_time = cook_time_feed
 
             # control the outputs of this state
             if remote_control == "yes" and remote_input != "NULL":
@@ -411,11 +422,10 @@ def display_state():  # edited
                 # if info is given, go to the select state
                 next_state = "write_state"
 
-        off_timer.cancel()
-        off_time_met = 0
+    off_timer.cancel()
+    off_time_met = 0
 
-        # TODO: Is this a bug?
-        return (next_state)
+    return (next_state)
 
 
 def write_state():
@@ -492,7 +502,6 @@ def write_state():
         # go to the next state
         press_enter()
         time.sleep(0.2)
-        next_state = "heat_setting_state"
 
     # choose the heat setting
     if in_temp["type"] == "probe":
@@ -528,7 +537,6 @@ def write_state():
         press_enter()
         time.sleep(0.2)
 
-    # TODO: should next_state be returned here instead?
     return ("display_state")
 
 
@@ -572,7 +580,7 @@ def toggle_actuators():
 
 
 def power_time_met_state():
-    return (next_state)
+    return ("on_off_state")
 
 
 if __name__ == "__main__":
