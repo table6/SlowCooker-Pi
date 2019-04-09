@@ -3,6 +3,7 @@
 from state_machine import state_machine
 from datetime import datetime
 from gpiozero import OutputDevice, Button, Button, LED
+from lib import mongoslowcooker
 import time
 import threading
 
@@ -539,17 +540,24 @@ def display_state():  # edited
     # sent as [time, heat, temp]
     out = {}
     if user_selection == "program":
-        out = {"type": "program", "temperature": heat_selection, "measurement": "F"}
+        out = {"type": "program", "temperature": heat_selection,
+               "measurement": "F"}
     elif user_selection == "manual":
-        out = {"type": "manual", "temperature": heat_selection, "measurement": "F"}
+        out = {"type": "manual", "temperature": heat_selection,
+               "measurement": "F"}
     else:
         out = {"type": "probe", "temperature": str(
             start_temp), "measurement": "F"}
 
-    out2 = {"start_time": datetime.utcnow(
-    ), "cook_time": cook_time_options[start_time]}
+    out2 = {"cook_time": cook_time_options[start_time]}
 
     # TODO: Need mongoslowcookerclient here
+    addr = ""
+    port = ""
+    client = mongoslowcooker.MongoSlowcookerClient(addr, port)
+
+    client.add_data_to_collection(out, "temperature")
+    client.add_data_to_collection(out2, "cook_time")
 
     # reset global variables
     user_selection = "-"
