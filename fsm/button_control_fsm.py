@@ -3,7 +3,7 @@
 from state_machine import state_machine
 from datetime import datetime
 from gpiozero import OutputDevice, Button, Button, LED
-from lib import mongoslowcooker
+from mongoslowcooker import MongoSlowcookerClient
 import time
 import threading
 
@@ -30,12 +30,12 @@ remote_input = "NULL"
 inactivity_time_met = 0
 start_time_met = 0
 off_time_met = 0
-ACTUATOR = 1  # LED(17) # pin 11
+ACTUATOR = LED(17) # pin 11
 actuator_status = 0  # 1 = actuated, 0 = not actuated
 
-addr = ""
-port = ""
-mongo_client = mongoslowcooker.MongoSlowcookerClient(addr, port)
+addr = "3.18.34.75"
+port = "5000"
+mongo_client = MongoSlowcookerClient(addr, port)
 
 
 def inactivityMet():
@@ -54,6 +54,9 @@ def offMet():
 
 
 def initialize_state():
+    global ACTUATOR
+    ACTUATOR.off()
+
     PROGRAM_R = LED(27)  # pin 13
     PROGRAM_W = LED(22)  # pin 15
     MANUAL_R = LED(18)  # pin 12
@@ -356,20 +359,17 @@ def display_state():  # edited
     out = {}
     if user_selection == "program":
         out = {"type": "program", "temperature": heat_selection,
-               "measurement": "F"}
+               "measurement": "N/A"}
     elif user_selection == "manual":
         out = {"type": "manual", "temperature": heat_selection,
-               "measurement": "F"}
+               "measurement": "N/A"}
     else:
         out = {"type": "probe", "temperature": str(
             start_temp), "measurement": "F"}
 
-    out2 = {"cook_time": cook_time_options[start_time]}
+    out2 = {"start_time": cook_time_options[start_time]}
 
-    # Will block here.
-    print("\tPushing temperature to server...")
     mongo_client.add_data_to_collection(out, "temperature")
-    print("\tPushing cook time to server...")
     mongo_client.add_data_to_collection(out2, "cook_time")
 
     # reset global variables
@@ -405,22 +405,27 @@ def display_state():  # edited
         else:
             next_state = "display_state"
 
-            # ask for instructions
-            # Will block here.
-            mongo_client.update_server_feed()
-            temperature_feed = mongo_client.server_feed["control_temperature"]
-            if temperature_feed is not None:
-                in_temp = temperature_feed
+        # ask for instructions
+        feed = mongo_client.update_server_feed()
+        temperature_feed = feed.get("control_temperature")
+        if temperature_feed is not None:
+            in_temp = temperature_feed
+            remote_input = "yes"
 
-            cook_time_feed = mongo_client.server_feed["control_cook_time"]
-            if cook_time_feed is not None:
-                in_cook_time = cook_time_feed
+        cook_time_feed = feed.get("control_cook_time")
+        if cook_time_feed is not None:
+            in_cook_time = cook_time_feed
+            remote_input = "yes"
 
-            # control the outputs of this state
-            if remote_control == "yes" and remote_input != "NULL":
-                # request info
-                # if info is given, go to the select state
-                next_state = "write_state"
+        toggle_feed = feed.get("control_lid_status")
+        if toggle_feed is not None:
+            toggle_actuators()
+
+        # control the outputs of this state
+        if remote_input != "NULL":
+            # request info
+            # if info is given, go to the select state
+            next_state = "write_state"
 
     off_timer.cancel()
     off_time_met = 0
