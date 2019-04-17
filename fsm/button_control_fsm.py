@@ -3,7 +3,7 @@
 from state_machine import state_machine
 from datetime import datetime
 from gpiozero import OutputDevice, Button, Button, LED
-from mongoslowcooker import MongoSlowcookerClient
+from lib.mongoslowcooker import MongoSlowcookerClient
 import time
 import threading
 
