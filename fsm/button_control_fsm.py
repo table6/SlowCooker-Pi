@@ -23,13 +23,14 @@ cook_time_options = ["00:30", "01:00", "01:30", "02:00", "02:30", "03:00",
                      "09:30", "10:00", "10:30", "11:00", "11:30", "12:00"]
 user_selection = "-"
 heat_selection = "high"
-remote_control = "no"
+remote_control = False
 start_temp = 160  # degrees F
 start_time = 7  # index
-remote_input = "NULL"
 inactivity_time_met = 0
 start_time_met = 0
 off_time_met = 0
+prog_time_met = 0
+cooker_is_on = False
 ACTUATOR = 1  # LED(17) # pin 11
 actuator_status = 0  # 1 = actuated, 0 = not actuated
 
@@ -51,7 +52,10 @@ def startMet():
 def offMet():
     global off_time_met
     off_time_met = 1
-
+	
+def progMet():
+	global prog_time_met
+	prog_time_met = 1
 
 def initialize_state():
     PROGRAM_R = LED(27)  # pin 13
@@ -97,6 +101,15 @@ def initialize_state():
 def on_off_state():  # edited
     next_state = "on_off_state"
     ON_OFF = Button(4)  # pin 7
+
+	global cooker_is_on, remote_control
+	
+	# change boolean and remote_control 
+	remote_control = False
+	if cooker_is_on:
+		cooker_is_on = False
+	else:
+		cooker_is_on = True
 
     print("ON OFF STATE")
 
@@ -337,19 +350,27 @@ def display_state():  # edited
     next_state = "display_state"
     time.sleep(0.25)
 
-    global user_selection, remote_control, remote_input, heat_selection
+    global user_selection, remote_control, prog_time_met, heat_selection
     global start_temp, start_time, off_time_met, in_cook_time, in_temp
     global mongo_client
 
     # cooker is locally programmed, remote control can start
     print("DISPLAY STATE")
 
-    remote_control = "yes"
-    remote_input = "NULL"
+    remote_control = True
+    remote_input = False
 
     # start on/off timer
     off_timer = threading.Timer(14*60*60, offMet)
     off_timer.start()
+	
+	# start program timer
+	if user_selection == "program":
+		user_cook_time = in_cook_time[start_time].split(":")
+        hour = int(user_cook_time[0])
+        minut = int(user_cook_time[1])
+		prog_timer = threading.Timer(((hour*360)+(minut*60)), progMet)
+		prog_timer.start()
 
     # send information to the app
     # sent as [time, heat, temp]
@@ -390,6 +411,9 @@ def display_state():  # edited
             next_state = "on_off_state"
         elif off_time_met == 1:
             next_state = "power_time_met_state"
+		elif prog_time_met == 1:
+			print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
+			mongo_client.add_data_to_collection("this needs updated")
         elif PROGRAM_R.is_pressed:
             next_state = "cook_time_state"
             user_selection = "program"
@@ -411,14 +435,15 @@ def display_state():  # edited
             temperature_feed = mongo_client.server_feed["control_temperature"]
             if temperature_feed is not None:
                 in_temp = temperature_feed
+				remote_input = True
 
             cook_time_feed = mongo_client.server_feed["control_cook_time"]
             if cook_time_feed is not None:
                 in_cook_time = cook_time_feed
+				remote_input = True
 
             # control the outputs of this state
-            if remote_control == "yes" and remote_input != "NULL":
-                # request info
+            if remote_control and remote_input:
                 # if info is given, go to the select state
                 next_state = "write_state"
 
