@@ -1,3 +1,0 @@
-[submodule "plugins/SlowCooker-Flask"]
-	path = plugins/SlowCooker-Flask
-	url = https://github.com/table6/SlowCooker-Flask.git
