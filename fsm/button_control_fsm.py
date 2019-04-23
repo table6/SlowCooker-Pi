@@ -32,7 +32,7 @@ start_time_met = 0
 off_time_met = 0
 prog_time_met = 0
 cooker_is_on = False
-ACTUATOR = LED(17) # pin 11
+ACTUATOR = LED(17)  # pin 11
 actuator_status = 0  # 1 = actuated, 0 = not actuated
 probe_pressed = 0
 program_pressed = 0
@@ -58,12 +58,14 @@ def startMet():
 def offMet():
     global off_time_met
     off_time_met = 1
-	
-def progMet():
-	global prog_time_met
-	prog_time_met = 1
 
-def initialize_state():
+
+def progMet():
+    global prog_time_met
+    prog_time_met = 1
+
+
+def initialize_state(cargo):
     global ACTUATOR
     ACTUATOR.off()
 
@@ -104,16 +106,26 @@ def initialize_state():
     ENTER_W.on()
     ENTER_W.off()
 
-    return("on_off_state")
+    return("on_off_state", cargo)
 
 
-def on_off_state():  # edited
+def on_off_state(cargo):  # edited
     next_state = "on_off_state"
-    ON_OFF = Button(4)  # pin 7
+
+    cargo["on_off"] = Button(4)  # pin 7
+    cargo["program"] = Button(27)  # pin 13
+    cargo["manual"] = Button(18)  # pin 12
+    cargo["probe"] = Button(24)  # pin 18
+    cargo["up"] = Button(5)  # pin 29
+    cargo["down"] = Button(13)  # pin 33
+    cargo["enter"] = Button(16)  # pin 36
+    cargo["lid"] = Button(21)
+
+    ON_OFF = cargo["on_off"]
 
     global cooker_is_on, remote_control
-    
-    # change boolean and remote_control 
+
+    # change boolean and remote_control
     remote_control = False
     if cooker_is_on:
         cooker_is_on = False
@@ -134,19 +146,23 @@ def on_off_state():  # edited
         # control the outputs of this state
         # no outputs
 
-    return (next_state)
+    return (next_state, cargo)
 
 
-def sel_state():  # edited
+def sel_state(cargo):  # edited
     next_state = "sel_state"
     time.sleep(0.1)
 
     global user_selection, inactivity_time_met
 
-    ON_OFF = Button(4)  # pin 7
-    PROGRAM_R = Button(27)  # pin 13
-    MANUAL_R = Button(18)  # pin 12
-    PROBE_R = Button(24)  # pin 18
+    # ON_OFF = Button(4)  # pin 7
+    # PROGRAM_R = Button(27)  # pin 13
+    # MANUAL_R = Button(18)  # pin 12
+    # PROBE_R = Button(24)  # pin 18
+    ON_OFF = cargo["on_off"]
+    PROGRAM_R = cargo["program"]
+    MANUAL_R = cargo["manual"]
+    PROBE_R = cargo["probe"]
 
     # start inactivity timer
     inact_timer = threading.Timer(30.0, inactivityMet)
@@ -174,21 +190,28 @@ def sel_state():  # edited
     inact_timer.cancel()
     inactivity_time_met = 0
 
-    return (next_state)
+    return (next_state, cargo)
 
 
-def cook_time_state():  # edited
+def cook_time_state(cargo):  # edited
     next_state = "cook_time_state"
     time.sleep(0.1)
 
     global start_time, user_selection, inactivity_time_met
 
-    ON_OFF = Button(4)  # pin 7
-    MANUAL_R = Button(18)  # pin 12
-    PROBE_R = Button(24)  # pin 18
-    UP_R = Button(5)  # pin 29
-    DOWN_R = Button(13)  # pin 33
-    ENTER_R = Button(16)  # pin 36
+    # ON_OFF = Button(4)  # pin 7
+    # MANUAL_R = Button(18)  # pin 12
+    # PROBE_R = Button(24)  # pin 18
+    # UP_R = Button(5)  # pin 29
+    # DOWN_R = Button(13)  # pin 33
+    # ENTER_R = Button(16)  # pin 36
+
+    ON_OFF = cargo["on_off"]
+    MANUAL_R = cargo["manual"]
+    PROBE_R = cargo["probe"]
+    UP_R = cargo["up"]
+    DOWN_R = cargo["down"]
+    ENTER_R = cargo["enter"]
 
     # start inactivity timer
     inact_timer = threading.Timer(30.0, inactivityMet)
@@ -225,12 +248,12 @@ def cook_time_state():  # edited
     inact_timer.cancel()
     inactivity_time_met = 0
 
-    return (next_state)
+    return (next_state, cargo)
 
 
-def heat_setting_state():  # edited
+def heat_setting_state(cargo):  # edited
     print("HEAT SETTING STATE")
-    
+
     next_state = "heat_setting_state"
     time.sleep(0.1)
 
@@ -245,13 +268,21 @@ def heat_setting_state():  # edited
 
     print("initializing buttons")
 
-    ON_OFF = Button(4)  # pin 7
-    PROGRAM_R = Button(27)  # pin 13
-    MANUAL_R = Button(18)  # pin 12
-    PROBE_R = Button(24)  # pin 18
-    UP_R = Button(5)  # pin 29
-    DOWN_R = Button(13)  # pin 33
-    ENTER_R = Button(16)  # pin 36
+    # ON_OFF = Button(4)  # pin 7
+    # PROGRAM_R = Button(27)  # pin 13
+    # MANUAL_R = Button(18)  # pin 12
+    # PROBE_R = Button(24)  # pin 18
+    # UP_R = Button(5)  # pin 29
+    # DOWN_R = Button(13)  # pin 33
+    # ENTER_R = Button(16)  # pin 36
+
+    ON_OFF = cargo["on_off"]
+    PROGRAM_R = cargo["program"]
+    MANUAL_R = cargo["manual"]
+    PROBE_R = cargo["probe"]
+    UP_R = cargo["up"]
+    DOWN_R = cargo["down"]
+    ENTER_R = cargo["enter"]
 
     print("buttons initialized")
 
@@ -305,26 +336,30 @@ def heat_setting_state():  # edited
 
     timer.cancel()
 
-#    inact_timer.cancel()
     inactivity_time_met = 0
-#    start_timer.cancel()
     start_time_met = 0
 
-    return (next_state)
+    return (next_state, cargo)
 
 
-def temp_setting_state():  # edited
+def temp_setting_state(cargo):  # edited
     next_state = "temp_setting_state"
     time.sleep(0.1)
 
     global start_temp, user_selection, start_time_met
 
-    ON_OFF = Button(4)  # pin 7
-    PROGRAM_R = Button(27)  # pin 13
-    MANUAL_R = Button(18)  # pin 12
-    UP_R = Button(5)  # pin 29
-    DOWN_R = Button(13)  # pin 33
-    ENTER_R = Button(16)  # pin 36
+    # ON_OFF = Button(4)  # pin 7
+    # PROGRAM_R = Button(27)  # pin 13
+    # MANUAL_R = Button(18)  # pin 12
+    # UP_R = Button(5)  # pin 29
+    # DOWN_R = Button(13)  # pin 33
+    # ENTER_R = Button(16)  # pin 36
+    ON_OFF = cargo["on_off"]
+    PROGRAM_R = cargo["program"]
+    MANUAL_R = cargo["manual"]
+    UP_R = cargo["up"]
+    DOWN_R = cargo["down"]
+    ENTER_R = cargo["enter"]
 
     # start the start timer
     start_timer = threading.Timer(20.0, startMet)
@@ -358,7 +393,7 @@ def temp_setting_state():  # edited
     start_timer.cancel()
     start_time_met = 0
 
-    return (next_state)
+    return (next_state, cargo)
 
 
 def record_probe_press():
@@ -384,7 +419,7 @@ def record_on_off_press():
 def record_local_lid_press():
     status = ""
     if toggle_actuators() == True:
-        status = "unsecure"    
+        status = "unsecure"
     else:
         status = "secure"
 
@@ -392,7 +427,7 @@ def record_local_lid_press():
     mongo_client.add_data_to_collection({"status": status}, "lid_status")
 
 
-def display_state():  # edited
+def display_state(cargo):  # edited
     next_state = "display_state"
     time.sleep(0.25)
 
@@ -409,7 +444,7 @@ def display_state():  # edited
     # start on/off timer
     off_timer = threading.Timer(14*60*60, offMet)
     off_timer.start()
-	
+
     # start program timer
     if user_selection == "program":
         user_cook_time = in_cook_time["start_time"].split(":")
@@ -438,23 +473,30 @@ def display_state():  # edited
     mongo_client.add_data_to_collection(out, "temperature")
     mongo_client.add_data_to_collection(out2, "cook_time")
     mongo_client.add_data_to_collection(out3, "cooker_status")
-   
+
     print("\t", str(out))
     print("\t", str(out2))
     print("\t", str(out3))
 
-    ON_OFF = Button(4)  # pin 7
-    PROGRAM_R = Button(27)  # pin 13
-    MANUAL_R = Button(18)  # pin 12
-    PROBE_R = Button(24)  # pin 18
-    ENTER_R = Button(16)  # pin 36
-    LOCAL_LID = Button(21) # pin 40
+    # ON_OFF = Button(4)  # pin 7
+    # PROGRAM_R = Button(27)  # pin 13
+    # MANUAL_R = Button(18)  # pin 12
+    # PROBE_R = Button(24)  # pin 18
+    # ENTER_R = Button(16)  # pin 36
+    # LOCAL_LID = Button(21)  # pin 40
+
+    ON_OFF = cargo["on_off"]
+    PROGRAM_R = cargo["program"]
+    MANUAL_R = cargo["manual"]
+    PROBE_R = cargo["probe"]
+    ENTER_R = cargo["enter"]
+    LOCAL_LID = cargo["lid"]
 
     # Register call backs so we can track button presses outside
     # of the main thread.
-    PROBE_R.when_pressed = record_probe_press 
-    PROGRAM_R.when_pressed = record_program_press 
-    MANUAL_R.when_pressed = record_manual_press 
+    PROBE_R.when_pressed = record_probe_press
+    PROGRAM_R.when_pressed = record_program_press
+    MANUAL_R.when_pressed = record_manual_press
     LOCAL_LID.when_pressed = record_local_lid_press
     ON_OFF.when_pressed = record_on_off_press
 
@@ -473,8 +515,10 @@ def display_state():  # edited
         elif off_time_met == 1:
             next_state = "power_time_met_state"
         elif prog_time_met == 1:
-            print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
-            mongo_client.add_data_to_collection({"status": "done"}, "cooker_status")
+            print("\tFinished cooking for ",
+                  in_cook_time[start_time], " hours.")
+            mongo_client.add_data_to_collection(
+                {"status": "done"}, "cooker_status")
         elif program_pressed == 1:
             next_state = "cook_time_state"
             user_selection = "program"
@@ -514,14 +558,15 @@ def display_state():  # edited
         if remote_input and remote_control:
             # if info is given, go to the select state
             next_state = "write_state"
+            cargo = {}
 
     off_timer.cancel()
     off_time_met = 0
 
-    return (next_state)
+    return (next_state, cargo)
 
 
-def write_state():
+def write_state(cargo):
     global in_temp, in_cook_time, start_temp, start_time, user_selection
     global heat_selection
 
@@ -633,7 +678,7 @@ def write_state():
         press_enter()
         time.sleep(0.2)
 
-    return ("display_state")
+    return ("display_state", cargo)
 
 
 def press_up():
@@ -674,7 +719,7 @@ def set_actuators(status):
 
     lid_status = ""
     if ACTUATOR.is_lit == True:
-        lid_status = "unsecure"    
+        lid_status = "unsecure"
     else:
         lid_status = "secure"
 
@@ -692,8 +737,8 @@ def toggle_actuators():
     return ACTUATOR.is_lit
 
 
-def power_time_met_state():
-    return ("on_off_state")
+def power_time_met_state(cargo):
+    return ("on_off_state", cargo)
 
 
 if __name__ == "__main__":
@@ -711,6 +756,6 @@ if __name__ == "__main__":
         m.set_start("initialize_state")  # this is the start command
         print("STARTING RUN")
 
-        m.run()
+        m.run({})
     except(KeyboardInterrupt):
         sys.exit(0)

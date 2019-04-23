@@ -1,6 +1,7 @@
 from datetime import datetime
 
 
+# https://www.python-course.eu/finite_state_machine.php
 class state_machine(object):
     """description of class"""
 
@@ -18,7 +19,7 @@ class state_machine(object):
     def set_start(self, name):
         self.startState = name.upper()
 
-    def run(self):
+    def run(self, cargo):
         try:
             handler = self.handlers[self.startState]
         except:
@@ -30,7 +31,7 @@ class state_machine(object):
         while True:
             current_time = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.now())
             print(current_time, "- ", end="")
-            (newState) = handler()
+            (newState, cargo) = handler(cargo)
             if newState.upper() in self.endStates:
                 print("reached ", newState)
                 break
