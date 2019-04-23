@@ -33,11 +33,14 @@ prog_time_met = 0
 cooker_is_on = False
 ACTUATOR = LED(17) # pin 11
 actuator_status = 0  # 1 = actuated, 0 = not actuated
+probe_pressed = 0
+program_pressed = 0
+manual_pressed = 0
 
 addr = "3.18.34.75"
 port = "5000"
-#mongo_client = MongoSlowcookerClient(addr, port)
-#mongo_client.update_server_feed()
+mongo_client = MongoSlowcookerClient(addr, port)
+mongo_client.update_server_feed()
 
 
 def inactivityMet():
@@ -350,13 +353,28 @@ def temp_setting_state():  # edited
     return (next_state)
 
 
+def record_probe_press():
+    global probe_pressed
+    probe_pressed = 1
+
+
+def record_program_press():
+    global program_pressed
+    program_pressed = 1
+
+
+def record_manual_press():
+    global manual_pressed
+    manual_pressed = 1
+
+
 def display_state():  # edited
     next_state = "display_state"
     time.sleep(0.25)
 
     global user_selection, remote_control, prog_time_met, heat_selection
     global start_temp, start_time, off_time_met, in_cook_time, in_temp
-    global mongo_client
+    global probe_pressed, program_pressed, manual_pressed, mongo_client
 
     # cooker is locally programmed, remote control can start
     print("DISPLAY STATE")
@@ -391,14 +409,20 @@ def display_state():  # edited
 
     out2 = {"start_time": cook_time_options[start_time]}
 
-    #mongo_client.add_data_to_collection(out, "temperature")
-    #mongo_client.add_data_to_collection(out2, "cook_time")
+    mongo_client.add_data_to_collection(out, "temperature")
+    mongo_client.add_data_to_collection(out2, "cook_time")
     
     ON_OFF = Button(4)  # pin 7
     PROGRAM_R = Button(27)  # pin 13
     MANUAL_R = Button(18)  # pin 12
     PROBE_R = Button(24)  # pin 18
     ENTER_R = Button(16)  # pin 36
+
+    # Register call backs so we can track button presses outside
+    # of the main thread.
+    PROBE_R.when_pressed = record_probe_press 
+    PROGRAM_R.when_pressed = record_program_press 
+    MANUAL_R.when_pressed = record_manual_press 
 
     # reset global variables
     user_selection = "-"
@@ -416,40 +440,40 @@ def display_state():  # edited
         elif prog_time_met == 1:
             print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
 #			mongo_client.add_data_to_collection("this needs updated")
-        elif PROGRAM_R.is_pressed:
+        elif program_pressed == 1:
             print("Display state - PROGRAM_R pressed")
             next_state = "cook_time_state"
             user_selection = "program"
-        elif MANUAL_R.is_pressed:
+            program_pressed = 0
+        elif manual_pressed == 1:
             print("Display state - MANUAL_R pressed")
             next_state = "heat_setting_state"
             user_selection = "manual"
+            manual_pressed = 0
         elif PROBE_R.is_pressed and ENTER_R.is_pressed:
             # temperature setting is changed to C, nothing to tell app
             next_state = "display_state"
-        elif PROBE_R.is_pressed:
+        elif probe_pressed == 1:
             print("Display state - PROBE_R pressed")
             next_state = "heat_setting_state"
             user_selection = "probe"
+            probe_pressed = 0
         else:
             next_state = "display_state"
 
         # ask for instructions
-        #feed = mongo_client.update_server_feed()
-        #temperature_feed = feed.get("control_temperature")
-        temperature_feed = None
+        feed = mongo_client.update_server_feed()
+        temperature_feed = feed.get("control_temperature")
         if temperature_feed is not None:
             in_temp = temperature_feed
             remote_input = True
 
-        #cook_time_feed = feed.get("control_cook_time")
-        cook_time_feed = None
+        cook_time_feed = feed.get("control_cook_time")
         if cook_time_feed is not None:
             in_cook_time = cook_time_feed
             remote_input = True
 
-        #toggle_feed = feed.get("control_lid_status")
-        toggle_feed = None
+        toggle_feed = feed.get("control_lid_status")
         if toggle_feed is not None:
             toggle_actuators(toggle_feed["status"])
 
