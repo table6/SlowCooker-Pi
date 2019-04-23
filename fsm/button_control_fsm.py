@@ -6,6 +6,7 @@ from gpiozero import OutputDevice, Button, Button, LED
 from lib.mongoslowcooker import MongoSlowcookerClient
 import time
 import threading
+import sys
 
 # to fix by Tuesday:
 # 1. way to know if user sent an input... instead of remote_input... (display state, whether to enter user info or not)
@@ -368,6 +369,17 @@ def record_manual_press():
     manual_pressed = 1
 
 
+def record_local_lid_press():
+    status = ""
+    if toggle_actuators() == True:
+        status = "unsecure"    
+    else:
+        status = "secure"
+
+    global mongo_client
+    mongo_client.add_data_to_collection({"status": status}, "lid_status")
+
+
 def display_state():  # edited
     next_state = "display_state"
     time.sleep(0.25)
@@ -408,21 +420,25 @@ def display_state():  # edited
             start_temp), "measurement": "F"}
 
     out2 = {"start_time": cook_time_options[start_time]}
+    out3 = {"status": "cooking"}
 
     mongo_client.add_data_to_collection(out, "temperature")
     mongo_client.add_data_to_collection(out2, "cook_time")
+    mongo_client.add_data_to_collection(out3, "cooker_status")
     
     ON_OFF = Button(4)  # pin 7
     PROGRAM_R = Button(27)  # pin 13
     MANUAL_R = Button(18)  # pin 12
     PROBE_R = Button(24)  # pin 18
     ENTER_R = Button(16)  # pin 36
+    LOCAL_LID = Button(21) # pin 40
 
     # Register call backs so we can track button presses outside
     # of the main thread.
     PROBE_R.when_pressed = record_probe_press 
     PROGRAM_R.when_pressed = record_program_press 
     MANUAL_R.when_pressed = record_manual_press 
+    LOCAL_LID.when_pressed = record_local_lid_press
 
     # reset global variables
     user_selection = "-"
@@ -439,14 +455,12 @@ def display_state():  # edited
             next_state = "power_time_met_state"
         elif prog_time_met == 1:
             print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
-#			mongo_client.add_data_to_collection("this needs updated")
+            mongo_client.add_data_to_collection({"status": "done"}, "cooker_status")
         elif program_pressed == 1:
-            print("Display state - PROGRAM_R pressed")
             next_state = "cook_time_state"
             user_selection = "program"
             program_pressed = 0
         elif manual_pressed == 1:
-            print("Display state - MANUAL_R pressed")
             next_state = "heat_setting_state"
             user_selection = "manual"
             manual_pressed = 0
@@ -454,7 +468,6 @@ def display_state():  # edited
             # temperature setting is changed to C, nothing to tell app
             next_state = "display_state"
         elif probe_pressed == 1:
-            print("Display state - PROBE_R pressed")
             next_state = "heat_setting_state"
             user_selection = "probe"
             probe_pressed = 0
@@ -475,7 +488,7 @@ def display_state():  # edited
 
         toggle_feed = feed.get("control_lid_status")
         if toggle_feed is not None:
-            toggle_actuators(toggle_feed["status"])
+            set_actuators(toggle_feed["status"])
 
         # control the outputs of this state
         if remote_input and remote_control:
@@ -525,7 +538,7 @@ def write_state():
 
     if user_selection == "program":
         # get the hour and minute selection as integers
-        user_cook_time = in_cook_time["length"].split(":")
+        user_cook_time = in_cook_time["start_time"].split(":")
         defined_time = cook_time_options[start_time].split(":")
 
         if len(user_cook_time) > 1 and len(defined_time) > 1:
@@ -631,15 +644,22 @@ def press_enter():
     time.sleep(0.2)
 
 
-def toggle_actuators(status):
-    global ACTUATOR, actuator_status
-#    if actuator_status == 1:
+def set_actuators(status):
+    global ACTUATOR
     if status == "secure":
         ACTUATOR.off()
-#        actuator_status = 0
     elif status == "unsecure":
         ACTUATOR.on()
-#        actuator_status = 1
+
+
+def toggle_actuators():
+    global ACTUATOR
+    if ACTUATOR.is_lit == True:
+        ACTUATOR.off()
+    else:
+        ACTUATOR.on()
+
+    return ACTUATOR.is_lit
 
 
 def power_time_met_state():
@@ -647,17 +667,20 @@ def power_time_met_state():
 
 
 if __name__ == "__main__":
-    m = state_machine()
-    m.add_state("on_off_state", on_off_state)
-    m.add_state("sel_state", sel_state)
-    m.add_state("cook_time_state", cook_time_state)
-    m.add_state("heat_setting_state", heat_setting_state)
-    m.add_state("temp_setting_state", temp_setting_state)
-    m.add_state("display_state", display_state)
-    m.add_state("power_time_met_state", None, end_state=1)
-    m.add_state("initialize_state", initialize_state)
-    m.add_state("write_state", write_state)
-    m.set_start("initialize_state")  # this is the start command
-    print("STARTING RUN")
+    try:
+        m = state_machine()
+        m.add_state("on_off_state", on_off_state)
+        m.add_state("sel_state", sel_state)
+        m.add_state("cook_time_state", cook_time_state)
+        m.add_state("heat_setting_state", heat_setting_state)
+        m.add_state("temp_setting_state", temp_setting_state)
+        m.add_state("display_state", display_state)
+        m.add_state("power_time_met_state", None, end_state=1)
+        m.add_state("initialize_state", initialize_state)
+        m.add_state("write_state", write_state)
+        m.set_start("initialize_state")  # this is the start command
+        print("STARTING RUN")
 
-    m.run()
+        m.run()
+    except(KeyboardInterrupt):
+        sys.exit(0)
