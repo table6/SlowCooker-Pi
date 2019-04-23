@@ -37,6 +37,7 @@ actuator_status = 0  # 1 = actuated, 0 = not actuated
 probe_pressed = 0
 program_pressed = 0
 manual_pressed = 0
+on_off_pressed = 0
 
 addr = "3.18.34.75"
 port = "5000"
@@ -115,9 +116,9 @@ def on_off_state():  # edited
     # change boolean and remote_control 
     remote_control = False
     if cooker_is_on:
-            cooker_is_on = False
+        cooker_is_on = False
     else:
-            cooker_is_on = True
+        cooker_is_on = True
 
     print("ON OFF STATE")
 
@@ -161,6 +162,7 @@ def sel_state():  # edited
             user_selection = "program"
             next_state = "cook_time_state"
         elif PROBE_R.is_pressed:
+            print("probe is pressed")
             user_selection = "probe"
             next_state = "heat_setting_state"
         elif MANUAL_R.is_pressed:
@@ -227,10 +229,21 @@ def cook_time_state():  # edited
 
 
 def heat_setting_state():  # edited
+    print("HEAT SETTING STATE")
+    
     next_state = "heat_setting_state"
     time.sleep(0.1)
 
     global user_selection, heat_selection, inactivity_time_met, start_time_met
+
+    if user_selection == "probe":
+        timer = threading.Timer(30.0, inactivityMet)
+        timer.start()
+    else:
+        timer = threading.Timer(20.0, startMet)
+        timer.start()
+
+    print("initializing buttons")
 
     ON_OFF = Button(4)  # pin 7
     PROGRAM_R = Button(27)  # pin 13
@@ -240,15 +253,7 @@ def heat_setting_state():  # edited
     DOWN_R = Button(13)  # pin 33
     ENTER_R = Button(16)  # pin 36
 
-    # start inactivity timer
-    inact_timer = threading.Timer(30.0, inactivityMet)
-    inact_timer.start()
-
-    # start the start timer
-    start_timer = threading.Timer(20.0, startMet)
-    start_timer.start()
-
-    print("HEAT SETTING STATE")
+    print("buttons initialized")
 
     while next_state == "heat_setting_state":
         # control the next state
@@ -298,9 +303,11 @@ def heat_setting_state():  # edited
                 heat_selection = "high"
             time.sleep(0.25)
 
-    inact_timer.cancel()
+    timer.cancel()
+
+#    inact_timer.cancel()
     inactivity_time_met = 0
-    start_timer.cancel()
+#    start_timer.cancel()
     start_time_met = 0
 
     return (next_state)
@@ -369,6 +376,11 @@ def record_manual_press():
     manual_pressed = 1
 
 
+def record_on_off_press():
+    global on_off_pressed
+    on_off_pressed = 1
+
+
 def record_local_lid_press():
     status = ""
     if toggle_actuators() == True:
@@ -387,6 +399,7 @@ def display_state():  # edited
     global user_selection, remote_control, prog_time_met, heat_selection
     global start_temp, start_time, off_time_met, in_cook_time, in_temp
     global probe_pressed, program_pressed, manual_pressed, mongo_client
+    global on_off_pressed
 
     # cooker is locally programmed, remote control can start
     print("DISPLAY STATE")
@@ -425,7 +438,11 @@ def display_state():  # edited
     mongo_client.add_data_to_collection(out, "temperature")
     mongo_client.add_data_to_collection(out2, "cook_time")
     mongo_client.add_data_to_collection(out3, "cooker_status")
-    
+   
+    print("\t", str(out))
+    print("\t", str(out2))
+    print("\t", str(out3))
+
     ON_OFF = Button(4)  # pin 7
     PROGRAM_R = Button(27)  # pin 13
     MANUAL_R = Button(18)  # pin 12
@@ -439,6 +456,7 @@ def display_state():  # edited
     PROGRAM_R.when_pressed = record_program_press 
     MANUAL_R.when_pressed = record_manual_press 
     LOCAL_LID.when_pressed = record_local_lid_press
+    ON_OFF.when_pressed = record_on_off_press
 
     # reset global variables
     user_selection = "-"
@@ -449,8 +467,9 @@ def display_state():  # edited
 
     while next_state == "display_state":
         # control the next state
-        if ON_OFF.is_pressed:
+        if on_off_pressed == 1:
             next_state = "on_off_state"
+            on_off_pressed = 0
         elif off_time_met == 1:
             next_state = "power_time_met_state"
         elif prog_time_met == 1:
@@ -476,6 +495,7 @@ def display_state():  # edited
 
         # ask for instructions
         feed = mongo_client.update_server_feed()
+
         temperature_feed = feed.get("control_temperature")
         if temperature_feed is not None:
             in_temp = temperature_feed
@@ -502,7 +522,8 @@ def display_state():  # edited
 
 
 def write_state():
-    global in_temp, in_cook_time, start_temp, start_time
+    global in_temp, in_cook_time, start_temp, start_time, user_selection
+    global heat_selection
 
     # choose the cook setting
     if in_temp["type"] == "probe":
@@ -650,6 +671,15 @@ def set_actuators(status):
         ACTUATOR.off()
     elif status == "unsecure":
         ACTUATOR.on()
+
+    lid_status = ""
+    if ACTUATOR.is_lit == True:
+        lid_status = "unsecure"    
+    else:
+        lid_status = "secure"
+
+    global mongo_client
+    mongo_client.add_data_to_collection({"status": lid_status}, "lid_status")
 
 
 def toggle_actuators():
