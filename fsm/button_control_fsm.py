@@ -36,7 +36,8 @@ actuator_status = 0  # 1 = actuated, 0 = not actuated
 
 addr = "3.18.34.75"
 port = "5000"
-mongo_client = MongoSlowcookerClient(addr, port)
+#mongo_client = MongoSlowcookerClient(addr, port)
+#mongo_client.update_server_feed()
 
 
 def inactivityMet():
@@ -105,14 +106,14 @@ def on_off_state():  # edited
     next_state = "on_off_state"
     ON_OFF = Button(4)  # pin 7
 
-	global cooker_is_on, remote_control
-	
-	# change boolean and remote_control 
-	remote_control = False
-	if cooker_is_on:
-		cooker_is_on = False
-	else:
-		cooker_is_on = True
+    global cooker_is_on, remote_control
+    
+    # change boolean and remote_control 
+    remote_control = False
+    if cooker_is_on:
+            cooker_is_on = False
+    else:
+            cooker_is_on = True
 
     print("ON OFF STATE")
 
@@ -366,13 +367,14 @@ def display_state():  # edited
     off_timer = threading.Timer(14*60*60, offMet)
     off_timer.start()
 	
-	# start program timer
-	if user_selection == "program":
-		user_cook_time = in_cook_time[start_time].split(":")
-        hour = int(user_cook_time[0])
-        minut = int(user_cook_time[1])
-		prog_timer = threading.Timer(((hour*360)+(minut*60)), progMet)
-		prog_timer.start()
+    # start program timer
+    if user_selection == "program":
+        user_cook_time = in_cook_time["start_time"].split(":")
+        if len(user_cook_time) > 1:
+            hour = int(user_cook_time[0])
+            minut = int(user_cook_time[1])
+            prog_timer = threading.Timer(((hour*360)+(minut*60)), progMet)
+            prog_timer.start()
 
     # send information to the app
     # sent as [time, heat, temp]
@@ -389,21 +391,21 @@ def display_state():  # edited
 
     out2 = {"start_time": cook_time_options[start_time]}
 
-    mongo_client.add_data_to_collection(out, "temperature")
-    mongo_client.add_data_to_collection(out2, "cook_time")
-
-    # reset global variables
-	user_selection = "-"
-	heat_selection = "high"
-	remote_control = True
-	start_time = 7
-	start_temp = 160
-
+    #mongo_client.add_data_to_collection(out, "temperature")
+    #mongo_client.add_data_to_collection(out2, "cook_time")
+    
     ON_OFF = Button(4)  # pin 7
     PROGRAM_R = Button(27)  # pin 13
     MANUAL_R = Button(18)  # pin 12
     PROBE_R = Button(24)  # pin 18
     ENTER_R = Button(16)  # pin 36
+
+    # reset global variables
+    user_selection = "-"
+    heat_selection = "high"
+    remote_control = True
+    start_time = 7
+    start_temp = 160
 
     while next_state == "display_state":
         # control the next state
@@ -411,38 +413,45 @@ def display_state():  # edited
             next_state = "on_off_state"
         elif off_time_met == 1:
             next_state = "power_time_met_state"
-		elif prog_time_met == 1:
-			print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
-			mongo_client.add_data_to_collection("this needs updated")
+        elif prog_time_met == 1:
+            print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
+#			mongo_client.add_data_to_collection("this needs updated")
         elif PROGRAM_R.is_pressed:
+            print("Display state - PROGRAM_R pressed")
             next_state = "cook_time_state"
             user_selection = "program"
         elif MANUAL_R.is_pressed:
+            print("Display state - MANUAL_R pressed")
             next_state = "heat_setting_state"
             user_selection = "manual"
         elif PROBE_R.is_pressed and ENTER_R.is_pressed:
             # temperature setting is changed to C, nothing to tell app
             next_state = "display_state"
         elif PROBE_R.is_pressed:
+            print("Display state - PROBE_R pressed")
             next_state = "heat_setting_state"
             user_selection = "probe"
         else:
             next_state = "display_state"
+
         # ask for instructions
-        feed = mongo_client.update_server_feed()
-        temperature_feed = feed.get("control_temperature")
+        #feed = mongo_client.update_server_feed()
+        #temperature_feed = feed.get("control_temperature")
+        temperature_feed = None
         if temperature_feed is not None:
             in_temp = temperature_feed
             remote_input = True
 
-        cook_time_feed = feed.get("control_cook_time")
+        #cook_time_feed = feed.get("control_cook_time")
+        cook_time_feed = None
         if cook_time_feed is not None:
             in_cook_time = cook_time_feed
             remote_input = True
 
-        toggle_feed = feed.get("control_lid_status")
+        #toggle_feed = feed.get("control_lid_status")
+        toggle_feed = None
         if toggle_feed is not None:
-            toggle_actuators()
+            toggle_actuators(toggle_feed["status"])
 
         # control the outputs of this state
         if remote_input and remote_control:
@@ -493,42 +502,44 @@ def write_state():
     if user_selection == "program":
         # get the hour and minute selection as integers
         user_cook_time = in_cook_time["length"].split(":")
-        hour = int(user_cook_time[0])
-        minut = int(user_cook_time[1])
-
-        # get the hour and minute current option as integers
         defined_time = cook_time_options[start_time].split(":")
-        opt_hour = int(defined_time[0])
-        while hour > opt_hour:
-            press_up()
-            time.sleep(0.2)
-            press_up()
-            time.sleep(0.2)
-            start_time += 2
 
-            # update current hour and minute option
-            opt_hour += 1
-            time.sleep(0.2)
+        if len(user_cook_time) > 1 and len(defined_time) > 1:
+            hour = int(user_cook_time[0])
+            minut = int(user_cook_time[1])
 
-        if minut == 30:
-            start_time = start_time + 1
-            press_up()
-            # update current hour and minute option
+            # get the hour and minute current option as integers
+            opt_hour = int(defined_time[0])
+            while hour > opt_hour:
+                press_up()
+                time.sleep(0.2)
+                press_up()
+                time.sleep(0.2)
+                start_time += 2
 
-        while hour < opt_hour:
-            press_down()
-            time.sleep(0.2)
-            press_down()
-            time.sleep(0.2)
-            start_time -= 2
+                # update current hour and minute option
+                opt_hour += 1
+                time.sleep(0.2)
 
-            # update current hour and minute option
-            opt_hour -= 1
-            time.sleep(0.2)
+            if minut == 30:
+                start_time = start_time + 1
+                press_up()
+                # update current hour and minute option
 
-        # go to the next state
-        press_enter()
-        time.sleep(0.2)
+            while hour < opt_hour:
+                press_down()
+                time.sleep(0.2)
+                press_down()
+                time.sleep(0.2)
+                start_time -= 2
+
+                # update current hour and minute option
+                opt_hour -= 1
+                time.sleep(0.2)
+
+            # go to the next state
+            press_enter()
+            time.sleep(0.2)
 
     # choose the heat setting
     if in_temp["type"] == "probe":
@@ -596,14 +607,15 @@ def press_enter():
     time.sleep(0.2)
 
 
-def toggle_actuators():
+def toggle_actuators(status):
     global ACTUATOR, actuator_status
-    if actuator_status == 1:
+#    if actuator_status == 1:
+    if status == "secure":
         ACTUATOR.off()
-        actuator_status = 0
-    else:
+#        actuator_status = 0
+    elif status == "unsecure":
         ACTUATOR.on()
-        actuator_status = 1
+#        actuator_status = 1
 
 
 def power_time_met_state():
