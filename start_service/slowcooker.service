@@ -1,0 +1,12 @@
+[Unit]
+Description=Activate a python virtual environment and start the FSM running
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/full/path/to/activate_env.sh
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
