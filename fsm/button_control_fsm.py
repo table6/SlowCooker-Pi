@@ -32,11 +32,11 @@ start_time_met = 0
 off_time_met = 0
 prog_time_met = 0
 cooker_is_on = False
-ACTUATOR = LED(17) # pin 11
-actuator_status = 0  # 1 = actuated, 0 = not actuated
 probe_pressed = 0
 program_pressed = 0
 manual_pressed = 0
+on_off_pressed = 0
+ACTUATOR = LED(17) # pin 11
 
 addr = "3.18.34.75"
 port = "5000"
@@ -57,14 +57,19 @@ def startMet():
 def offMet():
     global off_time_met
     off_time_met = 1
-	
+
+
 def progMet():
 	global prog_time_met
 	prog_time_met = 1
 
+
 def initialize_state():
-    global ACTUATOR
+    global mongo_client, ACTUATOR
+#    ACTUATOR = LED(17) # pin 19
     ACTUATOR.off()
+
+    mongo_client.add_data_to_collection({"status": "secure"}, "lid_status")
 
     PROGRAM_R = LED(27)  # pin 13
     PROGRAM_W = LED(22)  # pin 15
@@ -359,6 +364,11 @@ def record_probe_press():
     probe_pressed = 1
 
 
+def record_on_off_press():
+    global on_off_pressed
+    on_off_pressed = 1
+
+
 def record_program_press():
     global program_pressed
     program_pressed = 1
@@ -387,6 +397,7 @@ def display_state():  # edited
     global user_selection, remote_control, prog_time_met, heat_selection
     global start_temp, start_time, off_time_met, in_cook_time, in_temp
     global probe_pressed, program_pressed, manual_pressed, mongo_client
+    global on_off_pressed
 
     # cooker is locally programmed, remote control can start
     print("DISPLAY STATE")
@@ -422,6 +433,10 @@ def display_state():  # edited
     out2 = {"start_time": cook_time_options[start_time]}
     out3 = {"status": "cooking"}
 
+    print("\t", out)
+    print("\t", out2)
+    print("\t", out3)
+
     mongo_client.add_data_to_collection(out, "temperature")
     mongo_client.add_data_to_collection(out2, "cook_time")
     mongo_client.add_data_to_collection(out3, "cooker_status")
@@ -439,6 +454,7 @@ def display_state():  # edited
     PROGRAM_R.when_pressed = record_program_press 
     MANUAL_R.when_pressed = record_manual_press 
     LOCAL_LID.when_pressed = record_local_lid_press
+    ON_OFF.when_pressed = record_on_off_press
 
     # reset global variables
     user_selection = "-"
@@ -449,10 +465,12 @@ def display_state():  # edited
 
     while next_state == "display_state":
         # control the next state
-        if ON_OFF.is_pressed:
+        if on_off_pressed == 1:
             next_state = "on_off_state"
+            on_off_pressed = 0
         elif off_time_met == 1:
             next_state = "power_time_met_state"
+            mongo_client.add_data_to_collection({"status": "done"}, "cooker_status")
         elif prog_time_met == 1:
             print("\tFinished cooking for ", in_cook_time[start_time], " hours.")
             mongo_client.add_data_to_collection({"status": "done"}, "cooker_status")
@@ -488,7 +506,9 @@ def display_state():  # edited
 
         toggle_feed = feed.get("control_lid_status")
         if toggle_feed is not None:
-            set_actuators(toggle_feed["status"])
+            lid_status = set_actuators(toggle_feed["status"])
+            mongo_client.add_data_to_collection({"status": lid_status}, "lid_status")
+
 
         # control the outputs of this state
         if remote_input and remote_control:
@@ -502,7 +522,7 @@ def display_state():  # edited
 
 
 def write_state():
-    global in_temp, in_cook_time, start_temp, start_time
+    global in_temp, in_cook_time, start_temp, start_time, user_selection, heat_selection
 
     # choose the cook setting
     if in_temp["type"] == "probe":
@@ -650,6 +670,11 @@ def set_actuators(status):
         ACTUATOR.off()
     elif status == "unsecure":
         ACTUATOR.on()
+
+    if ACTUATOR.is_lit == True:
+        return "unsecure"
+    else:
+        return "secure"
 
 
 def toggle_actuators():
